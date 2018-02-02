@@ -1,5 +1,7 @@
 from bs4 import BeautifulSoup
+from bs4 import NavigableString
 import requests
+import os
 
 # Find text bracketed by <b>...</b>
 # Return the contents of the first pair of brackets found and the remainder of the input string
@@ -21,8 +23,7 @@ def FindBracketedText(s, b):
 h=requests.get("http://www.fanac.org/fanzines/Retro_Hugos.html")
 
 s=BeautifulSoup(h.content)
-b=s.body
-table=b.ol.contents
+table=s.body.ol.contents
 
 # The structure of the table is
 #       A string "\n"
@@ -53,7 +54,86 @@ for tag in table:
         listOf1942s[hrefLinkText]=hrefUrl
 
 # Now we have a dictionary containing the names and URLs of the 1942 fanzines.
-    # The next step is to figure out what 1942 issues of each we have on the websoite
+# The next step is to figure out what 1942 issues of each we have on the website
+# We do this by reading the fanzines/<name>/index.html file and then decoding the table in it.
+
+# Loop over the list of fanzines
+for title, relPath in listOf1942s.items():
+
+    # The URL we get is relative to the fanzines directory which has the URL fanac.org/fanzines
+    # We need to turn relPath into a URL
+    url="http://www.fanac.org/"+os.path.normpath(os.path.join("fanzines", relPath)).replace("\\", "/")
+    print (title, "", url)
+
+    # Download the index.html which lists all of the issues of the specified currently on the site
+    h = requests.get(url)
+
+    s = BeautifulSoup(h.content, "html.parser")
+    b = s.body.contents
+    # Because the structures of the pages are so random, we need to search the body for the table.
+    # *So far* all of the tables have been headed by <table border="1" cellpadding="5">, so we look for that.
+    def N(tag):
+        try:
+            return tag.__class__.__name__
+        except:
+            return "Something"
+
+
+    # ----------------------------------------
+    # Define inline a function to search recursively for the table containing the fanzines listing
+    def LookForTable(tag):
+        #print("call LookForTable with tag=", N(tag))
+        for stuff in tag:
+            #print ("   stuff=", stuff.name)
+            if stuff.name == "table":
+                #print("   Table found!!!")
+                # Next, we check the table to see if it has the values table border="1" cellpadding="5"
+                try:
+                    if stuff.attrs["border"] == "1" and stuff.attrs["cellpadding"] == "5":
+                        return stuff
+                except:
+                    continue
+            try:
+                if len(stuff.contents) > 0:
+                    val=LookForTable(stuff.contents)
+                if val != None:
+                    #print("   val popped")
+                    return val
+            except:
+                continue
+        #print("   Return None")
+        return None
+    #----------------------------------------
+
+    # And now use it.
+    val=LookForTable(b)
+    if val == None:
+        print("*** No Table found!")
+        continue
+
+    # OK, we probably have the issue table.  Now decode it.
+    # The first row is the column headers
+    # Subsequent rows are fanzine issue rows
+
+    #----------------------------------------
+    # Define inline a function to compress newline elements from a list of Tags.
+    def RemoveNewlineRows(tags):
+        compressedTags = []
+        for row in tags:
+            if not isinstance(row, NavigableString):
+                compressedTags.append(row)
+        return compressedTags
+    #----------------------------------------
+
+    # Some of the items showing up in val.contents will be strings containing newlines -- start by compressing them out.
+    val.contents=RemoveNewlineRows(val.contents)
+
+    # Ok. We have the table.  Make a list of the column headers. We need to compress the newlines out of this as well
+    tableHeader=RemoveNewlineRows(val.contents[0])
+    columnHeaders=[]
+    for col in tableHeader:
+        columnHeaders.append(col.string)
+    i=0
 
 
 i=0

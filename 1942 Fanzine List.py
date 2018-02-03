@@ -22,7 +22,7 @@ def FindBracketedText(s, b):
 # Download the fanac.org webpage which lists all of the 1942 fanzine issues currently on the site
 h=requests.get("http://www.fanac.org/fanzines/Retro_Hugos.html")
 
-s=BeautifulSoup(h.content)
+s=BeautifulSoup(h.content, "html.parser")
 table=s.body.ol.contents
 
 # The structure of the table is
@@ -38,6 +38,21 @@ for tag in table:
         continue
     line=tag.contents
 
+    #-------------------------------------
+    # Inline definition of a function to pull and hfref and accompanying text from a Tag
+    # The structure is "<a href='URL'>LINKTEXT</a>
+    # We want to extract the URL and LINKTEXT
+    def GetHrefAndTextFromTag(tag):
+        try:
+            href=tag.contents[0].attrs["href"]
+        except:
+            try:
+                href=tag.attrs["href"]
+            except:
+                href=None
+        return (tag.contents[0].string, href)
+    # -------------------------------------
+
     # The line is a list of tags and strings. Ignore the strings
     for tag2 in line:
         if tag2.string != None:
@@ -46,11 +61,7 @@ for tag in table:
         # Now we have a single fanzine entry. It has the format <li><a...></li>. We want the <a...> part
         # This is the first member of the tag's contents list.
         a=tag2.contents[0]
-
-        # Now we have a hyperlink. The structure is "<a href='URL'>LINKTEXT</a>
-        # We want to extract the URL and LINKTEXT
-        hrefUrl=a.attrs["href"]
-        hrefLinkText=a.contents[0]
+        hrefLinkText, hrefUrl=GetHrefAndTextFromTag(a)
         listOf1942s[hrefLinkText]=hrefUrl
 
 # Now we have a dictionary containing the names and URLs of the 1942 fanzines.
@@ -80,7 +91,7 @@ for title, relPath in listOf1942s.items():
 
 
     # ----------------------------------------
-    # Define inline a function to search recursively for the table containing the fanzines listing
+    # Inline definition of a function to search recursively for the table containing the fanzines listing
     def LookForTable(tag):
         #print("call LookForTable with tag=", N(tag))
         for stuff in tag:
@@ -116,7 +127,7 @@ for title, relPath in listOf1942s.items():
     # Subsequent rows are fanzine issue rows
 
     #----------------------------------------
-    # Define inline a function to compress newline elements from a list of Tags.
+    # Inline definition of a function to compress newline elements from a list of Tags.
     def RemoveNewlineRows(tags):
         compressedTags = []
         for row in tags:
@@ -129,10 +140,57 @@ for title, relPath in listOf1942s.items():
     val.contents=RemoveNewlineRows(val.contents)
 
     # Ok. We have the table.  Make a list of the column headers. We need to compress the newlines out of this as well
-    tableHeader=RemoveNewlineRows(val.contents[0])
-    columnHeaders=[]
+    tableHeader = RemoveNewlineRows(val.contents[0])
+    columnHeaders = []
     for col in tableHeader:
         columnHeaders.append(col.string)
+
+    #---------------------------------------
+    # Inline definition of a function to find the index of a string in a list of strings
+    def FindIndexOfStringInList(list, str):
+        for i in range(0, len(list) - 1):
+            if list[i] == str:
+                return i
+    #---------------------------------------
+
+    # Next, we select just the rows for 1942
+    # Note that the dates aren't especially consistsnt, either, so we have to do some searching
+    # What column contains the year?
+    yearCol=FindIndexOfStringInList(columnHeaders, "Year")
+    issueCol=FindIndexOfStringInList(columnHeaders, "Issue")
+    titleCol=FindIndexOfStringInList(columnHeaders, "Title")
+    if issueCol == None:
+        issueCol=titleCol
+
+    # If there's no yearCol or issueCol, just print a message and go on to the next fanzine
+    if yearCol == None:
+        print("    No yearCol found")
+        continue
+    if issueCol == None:
+        print("    No issueCol found")
+        continue
+
+    # What's left is one or more rows, each corresponding to an issue of that fanzine.
+    # We build up a list of lists.  Each list in the list of lists is a row
+    # We have to treat the Title colum specially, since it contains the critical href we need.
+    rows=[]
+    for i in range(1, len(val)):
+        tableRow=RemoveNewlineRows(val.contents[i])
+        row=[]
+        for j in range(0, len(tableRow)-1):
+            if (j != issueCol):
+                row.append(tableRow[j].string)
+            else:
+                row.append(GetHrefAndTextFromTag(tableRow[j]))
+
+        rows.append(row)
+
+
+    # Now select just the fanzines for 1942
+    for row in rows:
+        if row[yearCol] == "1942":
+            print(row[issueCol][1])
+
     i=0
 
 

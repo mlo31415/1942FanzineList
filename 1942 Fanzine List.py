@@ -44,12 +44,10 @@ for tag in table:
     # We want to extract the URL and LINKTEXT
     def GetHrefAndTextFromTag(tag):
         try:
-            href=tag.contents[0].attrs["href"]
+            href=tag.contents[0].attrs.get("href", None)
         except:
-            try:
-                href=tag.attrs["href"]
-            except:
-                href=None
+            href=tag.attrs.get("href")
+
         return (tag.contents[0].string, href)
     # -------------------------------------
 
@@ -62,14 +60,14 @@ for tag in table:
         # This is the first member of the tag's contents list.
         a=tag2.contents[0]
         hrefLinkText, hrefUrl=GetHrefAndTextFromTag(a)
-        listOf1942s[hrefLinkText]=hrefUrl
+        listOf1942s[hrefLinkText.lower()]=(hrefLinkText, hrefUrl)
 
 # Now we have a dictionary containing the names and URLs of the 1942 fanzines.
 # The next step is to figure out what 1942 issues of each we have on the website
 # We do this by reading the fanzines/<name>/index.html file and then decoding the table in it.
 
 # Loop over the list of fanzines
-for title, relPath in listOf1942s.items():
+for (key, (title, relPath)) in listOf1942s.items():
 
     # The URL we get is relative to the fanzines directory which has the URL fanac.org/fanzines
     # We need to turn relPath into a URL
@@ -83,12 +81,15 @@ for title, relPath in listOf1942s.items():
     b = s.body.contents
     # Because the structures of the pages are so random, we need to search the body for the table.
     # *So far* all of the tables have been headed by <table border="1" cellpadding="5">, so we look for that.
+
+    #-----------------------------------------
+    # Define inline a simple function to name tags for debugging purposes
     def N(tag):
         try:
             return tag.__class__.__name__
         except:
             return "Something"
-
+    #-----------------------------------------
 
     # ----------------------------------------
     # Inline definition of a function to search recursively for the table containing the fanzines listing
@@ -191,7 +192,57 @@ for title, relPath in listOf1942s.items():
         if row[yearCol] == "1942":
             print(row[issueCol][1])
 
-    i=0
+print("---Starting read of 1942 Fanzine List.txt")
 
+# OK, next we open the complete list of 1942 fanzines from Joe Siclari.
+# Each line follows a vague pattern:
+# <title> '(' <name of editor(s) ')' <a usually comma-separated list of issues> <crap, frequently in parenthesis>
+# Store the parsed information in a list of tuples
+f=open("1942 Fanzine List.txt")
+fanzines1942=[]
+for line in f:  # Each line is a fanzine
+    temp="".join(line.split())
+    if len(temp) == 0:  # Ignore lines that are all whitespace
+        continue
+
+    loc1=line.find("(")
+    if loc1 == -1:
+        print("*** Could find opening '(' in '"+ line + "'")
+        continue
+
+    loc2=line.find(")", loc1)
+    if loc2 == -1:
+        print("*** Could find closing ')' in '"+ line + "'")
+        continue
+
+    fanzines1942.append((line[:loc1-1], line[loc1+1:loc2-1], line[loc2+1:]))
+
+print("---fanzines1942 list created with "+str(len(fanzines1942))+" elements")
+
+# Now we go through the list we just parsed and generate the output document.
+#   1. We link the fanzine name to the fanzine page on fanac.org
+#   2. We link each issue number to the individual issue
+#   3. We highlight those fanzines which are eligible for a 1942 Hugo
+
+for i in range(0, len(fanzines1942)):
+    fanzine=fanzines1942[i]
+
+    # First we take the fanzine name from Joe's 1942 Fanzine List.txt and match it to a 1942 fanzine on fanac.org
+    jname=fanzine[0]
+
+    isHugoEligible=False        # Joe has tagged Hugo-eligible fanzines by making their name to be all-caps
+    if jname == jname.upper():
+        isHugoEligible=True
+
+    # listOf1942s is a dictionary of 1942 fanzines that we have on fanac.org. The key is the fanzine name in lower case
+    # the value is a tuple of the fanzine name and the URL on fanac.org
+    # We want to look up the entries from Joe's list and see if they are on it.
+    if jname.lower() in listOf1942s:
+        name, url=listOf1942s[jname.lower()]
+        print("   Found: "+name +" --> " + url)
+    else:
+        print("   Not found: "+jname)
+
+    # OK, now the problem is to decode the crap at the end to form a list of issue numbers...or something...
 
 i=0

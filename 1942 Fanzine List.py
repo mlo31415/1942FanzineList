@@ -66,12 +66,18 @@ for tag in table:
 # The next step is to figure out what 1942 issues of each we have on the website
 # We do this by reading the fanzines/<name>/index.html file and then decoding the table in it.
 
+#-----------------------------------------
+# Inline defintion of function to generate the proper kind of path.  (This may change depending on the target location of the output.)
+def RelPathToURL(relpath):
+    return "http://www.fanac.org/"+os.path.normpath(os.path.join("fanzines", relPath)).replace("\\", "/")
+#-----------------------------------------
+
 # Loop over the list of fanzines
 for (key, (title, relPath)) in listOf1942s.items():
 
     # The URL we get is relative to the fanzines directory which has the URL fanac.org/fanzines
     # We need to turn relPath into a URL
-    url="http://www.fanac.org/"+os.path.normpath(os.path.join("fanzines", relPath)).replace("\\", "/")
+    url=RelPathToURL(relPath)
     print (title, "", url)
 
     # Download the index.html which lists all of the issues of the specified currently on the site
@@ -253,7 +259,7 @@ for i in range(0, len(fanzines1942)):
             print("   Not found: "+jname)
 
     # Update the 1942 fanzines list with the new information
-    fanzines1942[i]=(fanzine[0], fanzine[1], fanzine[2], isHugoEligible, name, url)
+    fanzines1942[i]=(fanzine[0], fanzine[1], fanzine[2], isHugoEligible, name, RelPathToURL(url))
 
     # OK, now the problem is to decode the crap at the end to form a list of issue numbers...or something...
     # Skipped for the present

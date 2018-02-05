@@ -201,6 +201,8 @@ print("---Starting read of 1942 Fanzine List.txt")
 f=open("1942 Fanzine List.txt")
 fanzines1942=[]
 for line in f:  # Each line is a fanzine
+    if line[-1:] == "\n":
+        line=line[:-1]
     temp="".join(line.split())
     if len(temp) == 0:  # Ignore lines that are all whitespace
         continue
@@ -250,6 +252,16 @@ for i in range(0, len(fanzines1942)):
         else:
             print("   Not found: "+jname)
 
+    # Update the 1942 fanzines list with the new information
+    fanzines1942[i]=(fanzine[0], fanzine[1], fanzine[2], isHugoEligible, name, url)
+
     # OK, now the problem is to decode the crap at the end to form a list of issue numbers...or something...
+    # Skipped for the present
+
+    print("---Generate the HTML")
+    # Create the HTML file
+    for fanzine in fanzines1942:
+        print(fanzine)
+
 
 i=0

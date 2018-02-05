@@ -21,6 +21,7 @@ def FindBracketedText(s, b):
 
 # Download the fanac.org webpage which lists all of the 1942 fanzine issues currently on the site
 h=requests.get("http://www.fanac.org/fanzines/Retro_Hugos.html")
+print("---Retro_Hugos.html downloaded")
 
 s=BeautifulSoup(h.content, "html.parser")
 table=s.body.ol.contents
@@ -68,7 +69,9 @@ for tag in table:
 
 #-----------------------------------------
 # Inline defintion of function to generate the proper kind of path.  (This may change depending on the target location of the output.)
-def RelPathToURL(relpath):
+def RelPathToURL(relPath):
+    if relPath == None:
+        return "<no path>"
     return "http://www.fanac.org/"+os.path.normpath(os.path.join("fanzines", relPath)).replace("\\", "/")
 #-----------------------------------------
 
@@ -78,7 +81,7 @@ for (key, (title, relPath)) in listOf1942s.items():
     # The URL we get is relative to the fanzines directory which has the URL fanac.org/fanzines
     # We need to turn relPath into a URL
     url=RelPathToURL(relPath)
-    print (title, "", url)
+    print(title, "", url)
 
     # Download the index.html which lists all of the issues of the specified currently on the site
     h = requests.get(url)
@@ -161,7 +164,7 @@ for (key, (title, relPath)) in listOf1942s.items():
     #---------------------------------------
 
     # Next, we select just the rows for 1942
-    # Note that the dates aren't especially consistsnt, either, so we have to do some searching
+    # Note that the dates aren't especially consistent, either, so we have to do some searching
     # What column contains the year?
     yearCol=FindIndexOfStringInList(columnHeaders, "Year")
     issueCol=FindIndexOfStringInList(columnHeaders, "Issue")
@@ -223,7 +226,7 @@ for line in f:  # Each line is a fanzine
         print("*** Could find closing ')' in '"+ line + "'")
         continue
 
-    fanzines1942.append((line[:loc1-1], line[loc1+1:loc2-1], line[loc2+1:]))
+    fanzines1942.append((line[:loc1-1], line[loc1+1:loc2], line[loc2+1:]))
 
 print("---fanzines1942 list created with "+str(len(fanzines1942))+" elements")
 
@@ -264,10 +267,10 @@ for i in range(0, len(fanzines1942)):
     # OK, now the problem is to decode the crap at the end to form a list of issue numbers...or something...
     # Skipped for the present
 
-    print("---Generate the HTML")
-    # Create the HTML file
-    for fanzine in fanzines1942:
-        print(fanzine)
+print("---Generate the HTML")
+# Create the HTML file
+for fanzine in fanzines1942:
+    print(fanzine)
 
 
 i=0

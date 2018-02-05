@@ -237,11 +237,18 @@ for i in range(0, len(fanzines1942)):
     # listOf1942s is a dictionary of 1942 fanzines that we have on fanac.org. The key is the fanzine name in lower case
     # the value is a tuple of the fanzine name and the URL on fanac.org
     # We want to look up the entries from Joe's list and see if they are on it.
+    name=None
+    url=None
     if jname.lower() in listOf1942s:
         name, url=listOf1942s[jname.lower()]
-        print("   Found: "+name +" --> " + url)
+        print("   Found (1): "+name +" --> " + url)
     else:
-        print("   Not found: "+jname)
+        # Try adding a trailing ", the"since sometimes Joe's list omits this
+        if (jname.lower()+", the") in listOf1942s:
+            name, url = listOf1942s[jname.lower()+", the"]
+            print("   Found (2): " + name + " --> " + url)
+        else:
+            print("   Not found: "+jname)
 
     # OK, now the problem is to decode the crap at the end to form a list of issue numbers...or something...
 

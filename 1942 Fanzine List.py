@@ -230,6 +230,43 @@ for line in f:  # Each line is a fanzine
 
 print("---fanzines1942 list created with "+str(len(fanzines1942))+" elements")
 
+
+print("--- Read Links1942.txt")
+# Now we read Links1942.txt, which contains links to issues of fanzines *outside* fanac.org.
+# It's organized as a table, with the first row a ';'-delimited list of column headers
+#    and the remaining rows are each a ';'-delimited pointer to an exteral fanzine
+f=open("Links1942.txt")
+links1942=[]
+links1942ColNames=[]
+for line in f:  # Each line after the first is a link to an external fanzine
+    if len(links1942ColNames) == 0:
+        temp=line.split(";")
+        for t in temp:
+            links1942ColNames.append(t.strip())
+        continue
+    temp=line.split(";")
+    t2=[]
+    for t in temp:
+        t2.append(t.strip())
+    links1942.append(t2)
+
+# OK, what column has the fanzine name and URL?
+titleCol=None
+urlCol=None
+for i in range(0, len(links1942ColNames)):
+    if links1942ColNames[i].lower() == "title":
+        titleCol=i
+    if links1942ColNames[i].lower() == "url":
+        urlCol=i
+
+if titleCol == None:
+    print("****Failed to find title column in links1942.txt")
+if urlCol == None:
+    print("****Failed to find URL column in links1942.txt")
+print("   titleCol="+str(titleCol)+"  urlCol="+str(urlCol))
+
+print("--- Completed reading Links1942.txt")
+
 # Now we go through the list we just parsed and generate the output document.
 #   1. We link the fanzine name to the fanzine page on fanac.org
 #   2. We link each issue number to the individual issue
@@ -261,16 +298,41 @@ for i in range(0, len(fanzines1942)):
         else:
             print("   Not found: "+jname)
 
+    # If that didn't work, see if we have a match in the list of external links
+    if name == None:
+        for ex in links1942:
+            if jname.lower() == ex[titleCol].lower():
+                name, url = (ex[titleCol], ex[urlCol])
+                print("   Found (3): " + name + " --> " + url)
+                break
+            else:
+                # Try adding a trailing ", the"since sometimes Joe's list omits this
+                if (jname.lower() + ", the") == ex[titleCol].lower():
+                    name, url =  (ex[titleCol], ex[urlCol])
+                    print("   Found (4): " + name + " --> " + url)
+                    break
+    if name == None:
+        print("   Not found (5): " + jname)
+
     # Update the 1942 fanzines list with the new information
     fanzines1942[i]=(fanzine[0], fanzine[1], fanzine[2], isHugoEligible, name, RelPathToURL(url))
 
     # OK, now the problem is to decode the crap at the end to form a list of issue numbers...or something...
-    # Skipped for the present
+    # ***Skipped for the present***
+
+
 
 print("---Generate the HTML")
 # Create the HTML file
 for fanzine in fanzines1942:
     print(fanzine)
+    if fanzine[3] and fanzine[4] != None:
+        str=fanzine[0] + " ("+fanzine[1]+") " + fanzine[2]+ '     <a href="'+fanzine[5]+'">'+fanzine[4]+"</a>"
+    elif fanzine[3]:
+         str = fanzine[0] + " (" + fanzine[1] + ") " + fanzine[2] +"   MISSING from fanac.org"
+    else:
+        str = fanzine[0] + " (" + fanzine[1] + ") " + fanzine[2]
+    print (str)
 
 
 i=0

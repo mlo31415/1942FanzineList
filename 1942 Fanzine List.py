@@ -331,28 +331,28 @@ f.write("<ul>\n")
 # Create the HTML file
 for fanzine in fanzines1942:
     print(fanzine)
-    # fanzine[3] is "isHugoEligible", fanzine[4] is name and fanzine[5] is the URL
+    # fanzine[3] is "isHugoEligible", fanzine[4] is the name and fanzine[5] is the URL
     htm=None
     if fanzine[3]:
         if fanzine[4] != None and fanzine[5] != None:    # We have full information for an eligible zine
             str="Eligible:  "+fanzine[0]+" ("+fanzine[1]+") "+fanzine[2]+'     <a href="'+fanzine[5]+'">'+fanzine[4]+"</a>"
-            htm='<font color="#FF0000">Eligible</font>&nbsp;&nbsp;<a href="'+fanzine[5]+'">&nbsp;&nbsp;'+fanzine[4]+"</a>"+" ("+fanzine[1]+") "+fanzine[2]
-        elif fanzine[4] != None and fanzine[5] == None:  # We're missing a URL for an eligible item
+            htm='<font color="#FF0000">Eligible</font>&nbsp;&nbsp;<i><a href="'+fanzine[5]+'">'+fanzine[4]+"</a></i>"+" ("+fanzine[1]+") "+fanzine[2]
+        elif fanzine[4] != None and fanzine[5] == None:  # We're missing a URL for an eligible zine
             str="Eligible:  "+fanzine[0]+" ("+fanzine[1]+") "+fanzine[2]
-            htm='<font color="#FF0000">Eligible</font>&nbsp;&nbsp;<a href="'+fanzine[5]+'">&nbsp;&nbsp;'+fanzine[4]+"</a>"+" ("+fanzine[1]+") "+fanzine[2]
-        elif fanzine[4] == None:        # We're missing all infromation from fanac.org for an eligible fanzine -- it isn't there
+            htm='<font color="#FF0000">Eligible</font>&nbsp;&nbsp;<i><a href="'+fanzine[5]+'"></i>'+fanzine[4]+"</a>"+" ("+fanzine[1]+") "+fanzine[2]
+        elif fanzine[4] == None:        # We're missing all information from fanac.org for an eligible fanzine -- it isn't there
             str=fanzine[0]+" ("+fanzine[1]+") "+fanzine[2] +"   MISSING from fanac.org"
-            htm='<font color="#FF0000">Eligible</font>&nbsp;&nbsp;'+fanzine[0]+" ("+fanzine[1]+") "+fanzine[2] +"&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;(MISSING from fanac.org)"
+            htm='<font color="#FF0000">Eligible</font>&nbsp;&nbsp;<i>'+fanzine[0]+"</i> ("+fanzine[1]+") "+fanzine[2] +"&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;(MISSING from fanac.org)"
     else:
         if fanzine[4] != None and fanzine[5] != None:    # We have full information for an ineligible zine
             str=fanzine[0]+" ("+fanzine[1]+") "+fanzine[2]+'     <a href="'+fanzine[5]+'">'+fanzine[4]+"</a>"
-            htm='<a href="'+fanzine[5]+'">&nbsp;&nbsp;'+fanzine[4]+"</a>"+" ("+fanzine[1]+") "+fanzine[2]
+            htm='<i><a href="'+fanzine[5]+'">'+fanzine[4]+"</a></i>"+" ("+fanzine[1]+") "+fanzine[2]
         elif fanzine[4] != None and fanzine[5] == None:  # We're missing a URL for an ineligible item
             str=fanzine[0]+" ("+fanzine[1]+") "+fanzine[2]
-            htm='<a href="'+fanzine[5]+'">&nbsp;&nbsp;'+fanzine[4]+"</a>"+" ("+fanzine[1]+") "+fanzine[2]
+            htm='<i><a href="'+fanzine[5]+'">&nbsp;&nbsp;'+fanzine[4]+"</a></i>"+" ("+fanzine[1]+") "+fanzine[2]
         elif fanzine[4] == None:        # We're missing all infromation from fanac.org for an ineligible fanzine -- it isn't there
             str=fanzine[0]+" ("+fanzine[1]+") "+fanzine[2] +"   MISSING from fanac.org"
-            htm=fanzine[0]+" ("+fanzine[1]+") "+fanzine[2] +"   MISSING from fanac.org"
+            htm='<i>'+fanzine[0]+"</i> ("+fanzine[1]+") "+fanzine[2] +"&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;(MISSING from fanac.org)"
 
     print(str)
     if htm != None:

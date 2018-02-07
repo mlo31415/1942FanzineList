@@ -72,7 +72,9 @@ for tag in table:
 def RelPathToURL(relPath):
     if relPath == None:
         return "<no path>"
-    return "http://www.fanac.org/"+os.path.normpath(os.path.join("fanzines", relPath)).replace("\\", "/")
+    if relPath[0] == ".":
+        return "http://www.fanac.org/"+os.path.normpath(os.path.join("fanzines", relPath)).replace("\\", "/")
+    return relPath
 #-----------------------------------------
 
 # Loop over the list of fanzines
@@ -340,7 +342,7 @@ for fanzine in fanzines1942:
             htm='<font color="#FF0000">Eligible</font>&nbsp;&nbsp;<a href="'+fanzine[5]+'">&nbsp;&nbsp;'+fanzine[4]+"</a>"+" ("+fanzine[1]+") "+fanzine[2]
         elif fanzine[4] == None:        # We're missing all infromation from fanac.org for an eligible fanzine -- it isn't there
             str=fanzine[0]+" ("+fanzine[1]+") "+fanzine[2] +"   MISSING from fanac.org"
-            htm='<font color="#FF0000">Eligible</font>&nbsp;&nbsp;'+fanzine[0]+" ("+fanzine[1]+") "+fanzine[2] +"   MISSING from fanac.org"
+            htm='<font color="#FF0000">Eligible</font>&nbsp;&nbsp;'+fanzine[0]+" ("+fanzine[1]+") "+fanzine[2] +"&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;(MISSING from fanac.org)"
     else:
         if fanzine[4] != None and fanzine[5] != None:    # We have full information for an ineligible zine
             str=fanzine[0]+" ("+fanzine[1]+") "+fanzine[2]+'     <a href="'+fanzine[5]+'">'+fanzine[4]+"</a>"

@@ -2,6 +2,7 @@ from bs4 import BeautifulSoup
 from bs4 import NavigableString
 import requests
 import os
+import collections
 
 # Find text bracketed by <b>...</b>
 # Return the contents of the first pair of brackets found and the remainder of the input string
@@ -205,6 +206,9 @@ for (key, (title, relPath)) in listOf1942s.items():
 
 print("---Starting read of 1942 Fanzine List.txt")
 
+# Define a named tuple to hold the data I get from Joe's input file
+JoesData=collections.namedtuple("JoesData", "Name Editor Stuff")
+
 # OK, next we open the complete list of 1942 fanzines from Joe Siclari.
 # Each line follows a vague pattern:
 # <title> '(' <name of editor(s) ')' <a usually comma-separated list of issues> <crap, frequently in parenthesis>
@@ -228,7 +232,9 @@ for line in f:  # Each line is a fanzine
         print("*** Could find closing ')' in '"+ line + "'")
         continue
 
-    fanzines1942.append((line[:loc1-1], line[loc1+1:loc2], line[loc2+1:]))
+    fanzines1942.append(JoesData(line[:loc1-1], line[loc1+1:loc2], line[loc2+1:]))
+
+f.close()
 
 print("---fanzines1942 list created with "+str(len(fanzines1942))+" elements")
 
@@ -237,35 +243,27 @@ print("--- Read Links1942.txt")
 # Now we read Links1942.txt, which contains links to issues of fanzines *outside* fanac.org.
 # It's organized as a table, with the first row a ';'-delimited list of column headers
 #    and the remaining rows are each a ';'-delimited pointer to an exteral fanzine
+
+# Firdst read the neader line which names the columns
 f=open("Links1942.txt")
+line=f.readline()
+line=line.replace(";", "")
+links1942ColNames=line.split(" ")
+
+# Define a named tuple to hold the data I get from the external links input file
+ExternalLinksData=collections.namedtuple("ExternalLinksData", line)
+
+# Now read the rest of the data.
 links1942=[]
-links1942ColNames=[]
 for line in f:  # Each line after the first is a link to an external fanzine
-    if len(links1942ColNames) == 0:
-        temp=line.split(";")
-        for t in temp:
-            links1942ColNames.append(t.strip())
-        continue
+
     temp=line.split(";")
     t2=[]
     for t in temp:
         t2.append(t.strip())
-    links1942.append(t2)
+    links1942.append(ExternalLinksData(*tuple(t2)))
 
-# OK, what column has the fanzine name and URL?
-titleCol=None
-urlCol=None
-for i in range(0, len(links1942ColNames)):
-    if links1942ColNames[i].lower() == "title":
-        titleCol=i
-    if links1942ColNames[i].lower() == "url":
-        urlCol=i
-
-if titleCol == None:
-    print("****Failed to find title column in links1942.txt")
-if urlCol == None:
-    print("****Failed to find URL column in links1942.txt")
-print("   titleCol="+str(titleCol)+"  urlCol="+str(urlCol))
+f.close()
 
 print("--- Completed reading Links1942.txt")
 
@@ -273,6 +271,9 @@ print("--- Completed reading Links1942.txt")
 #   1. We link the fanzine name to the fanzine page on fanac.org
 #   2. We link each issue number to the individual issue
 #   3. We highlight those fanzines which are eligible for a 1942 Hugo
+
+# Define a named tuple to hold the expanded data I get by combining all the sources
+ExpandedData=collections.namedtuple("ExpandedData", "Name Editor Stuff isHugoEligible, Name2, URL")
 
 for i in range(0, len(fanzines1942)):
     fanzine=fanzines1942[i]
@@ -303,26 +304,24 @@ for i in range(0, len(fanzines1942)):
     # If that didn't work, see if we have a match in the list of external links
     if name == None:
         for ex in links1942:
-            if jname.lower() == ex[titleCol].lower():
-                name, url = (ex[titleCol], ex[urlCol])
+            if jname.lower() == ex.Title.lower():
+                name, url = (ex.Title, ex.URL)
                 print("   Found (3): " + name + " --> " + url)
                 break
             else:
                 # Try adding a trailing ", the"since sometimes Joe's list omits this
-                if (jname.lower() + ", the") == ex[titleCol].lower():
-                    name, url =  (ex[titleCol], ex[urlCol])
+                if (jname.lower() + ", the") == ex.Title.lower():
+                    name, url =  (ex.Title, ex.URL)
                     print("   Found (4): " + name + " --> " + url)
                     break
     if name == None:
         print("   Not found (5): " + jname)
 
     # Update the 1942 fanzines list with the new information
-    fanzines1942[i]=(fanzine[0], fanzine[1], fanzine[2], isHugoEligible, name, RelPathToURL(url))
+    fanzines1942[i]=ExpandedData(fanzine[0], fanzine[1], fanzine[2], isHugoEligible, name, RelPathToURL(url))
 
     # OK, now the problem is to decode the crap at the end to form a list of issue numbers...or something...
     # ***Skipped for the present***
-
-
 
 print("---Generate the HTML")
 f=open("1942.html", "w")
@@ -333,26 +332,26 @@ for fanzine in fanzines1942:
     print(fanzine)
     # fanzine[3] is "isHugoEligible", fanzine[4] is the name and fanzine[5] is the URL
     htm=None
-    if fanzine[3]:
-        if fanzine[4] != None and fanzine[5] != None:    # We have full information for an eligible zine
-            str="Eligible:  "+fanzine[0]+" ("+fanzine[1]+") "+fanzine[2]+'     <a href="'+fanzine[5]+'">'+fanzine[4]+"</a>"
-            htm='<font color="#FF0000">Eligible</font>&nbsp;&nbsp;<i><a href="'+fanzine[5]+'">'+fanzine[4]+"</a></i>"+" ("+fanzine[1]+") "+fanzine[2]
-        elif fanzine[4] != None and fanzine[5] == None:  # We're missing a URL for an eligible zine
-            str="Eligible:  "+fanzine[0]+" ("+fanzine[1]+") "+fanzine[2]
-            htm='<font color="#FF0000">Eligible</font>&nbsp;&nbsp;<i><a href="'+fanzine[5]+'"></i>'+fanzine[4]+"</a>"+" ("+fanzine[1]+") "+fanzine[2]
-        elif fanzine[4] == None:        # We're missing all information from fanac.org for an eligible fanzine -- it isn't there
-            str=fanzine[0]+" ("+fanzine[1]+") "+fanzine[2] +"   MISSING from fanac.org"
-            htm='<font color="#FF0000">Eligible</font>&nbsp;&nbsp;<i>'+fanzine[0]+"</i> ("+fanzine[1]+") "+fanzine[2] +"&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;(MISSING from fanac.org)"
+    if fanzine.isHugoEligible:
+        if fanzine.Name2 != None and fanzine.URL != None:    # We have full information for an eligible zine
+            str="Eligible:  "+fanzine.Name+" ("+fanzine.Editor+") "+fanzine.Stuff+'     <a href="'+fanzine.URL+'">'+fanzine[4]+"</a>"
+            htm='<font color="#FF0000">Eligible</font>&nbsp;&nbsp;<i><a href="'+fanzine.URL+'">'+fanzine[4]+"</a></i>"+" ("+fanzine.Editor+") "+fanzine.Stuff
+        elif fanzine.Name2 != None and fanzine.URL == None:  # We're missing a URL for an eligible zine
+            str="Eligible:  "+fanzine.Name+" ("+fanzine.Editor+") "+fanzine.Stuff
+            htm='<font color="#FF0000">Eligible</font>&nbsp;&nbsp;<i><a href="'+fanzine.URL+'"></i>'+fanzine[4]+"</a>"+" ("+fanzine.Editor+") "+fanzine.Stuff
+        elif fanzine.Name2 == None:        # We're missing all information from fanac.org for an eligible fanzine -- it isn't there
+            str=fanzine.Name+" ("+fanzine.Editor+") "+fanzine.Stuff +"   MISSING from fanac.org"
+            htm='<font color="#FF0000">Eligible</font>&nbsp;&nbsp;<i>'+fanzine.Name+"</i> ("+fanzine.Editor+") "+fanzine.Stuff +"&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;(MISSING from fanac.org)"
     else:
-        if fanzine[4] != None and fanzine[5] != None:    # We have full information for an ineligible zine
-            str=fanzine[0]+" ("+fanzine[1]+") "+fanzine[2]+'     <a href="'+fanzine[5]+'">'+fanzine[4]+"</a>"
-            htm='<i><a href="'+fanzine[5]+'">'+fanzine[4]+"</a></i>"+" ("+fanzine[1]+") "+fanzine[2]
-        elif fanzine[4] != None and fanzine[5] == None:  # We're missing a URL for an ineligible item
-            str=fanzine[0]+" ("+fanzine[1]+") "+fanzine[2]
-            htm='<i><a href="'+fanzine[5]+'">&nbsp;&nbsp;'+fanzine[4]+"</a></i>"+" ("+fanzine[1]+") "+fanzine[2]
-        elif fanzine[4] == None:        # We're missing all infromation from fanac.org for an ineligible fanzine -- it isn't there
-            str=fanzine[0]+" ("+fanzine[1]+") "+fanzine[2] +"   MISSING from fanac.org"
-            htm='<i>'+fanzine[0]+"</i> ("+fanzine[1]+") "+fanzine[2] +"&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;(MISSING from fanac.org)"
+        if fanzine.Name2 != None and fanzine.URL != None:    # We have full information for an ineligible zine
+            str=fanzine.Name+" ("+fanzine.Editor+") "+fanzine.Stuff+'     <a href="'+fanzine.URL+'">'+fanzine.Name2+"</a>"
+            htm='<i><a href="'+fanzine.URL+'">'+fanzine.Name2+"</a></i>"+" ("+fanzine.Editor+") "+fanzine.Stuff
+        elif fanzine.Name2 != None and fanzine.URL == None:  # We're missing a URL for an ineligible item
+            str=fanzine.Name+" ("+fanzine.Editor+") "+fanzine.Stuff
+            htm='<i><a href="'+fanzine.URL+'">&nbsp;&nbsp;'+fanzine.Name2+"</a></i>"+" ("+fanzine.Editor+") "+fanzine.Stuff
+        elif fanzine.Name2 == None:        # We're missing all infromation from fanac.org for an ineligible fanzine -- it isn't there
+            str=fanzine.Name+" ("+fanzine.Editor+") "+fanzine.Stuff +"   MISSING from fanac.org"
+            htm='<i>'+fanzine.Name+"</i> ("+fanzine.Editor+") "+fanzine.Stuff +"&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;(MISSING from fanac.org)"
 
     print(str)
     if htm != None:

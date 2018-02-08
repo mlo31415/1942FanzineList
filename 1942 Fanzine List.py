@@ -216,9 +216,9 @@ JoesData=collections.namedtuple("JoesData", "Name Editor Stuff")
 f=open("1942 Fanzine List.txt")
 fanzines1942=[]
 for line in f:  # Each line is a fanzine
-    if line[-1:] == "\n":
+    if line[-1:] == "\n":   # Drop the trailing newline
         line=line[:-1]
-    temp="".join(line.split())
+    temp="".join(line.split())  # This is a Python idiom which removes whitespace from a string
     if len(temp) == 0:  # Ignore lines that are all whitespace
         continue
 
@@ -243,13 +243,14 @@ print("--- Read Links1942.txt")
 # It's organized as a table, with the first row a ';'-delimited list of column headers
 #    and the remaining rows are each a ';'-delimited pointer to an exteral fanzine
 
-# Firdst read the neader line which names the columns
+# First read the header line which names the columns.  The headers are separated from ';", so we need to remove these.
 f=open("Links1942.txt")
 line=f.readline()
 line=line.replace(";", "")
 links1942ColNames=line.split(" ")
 
 # Define a named tuple to hold the data I get from the external links input file
+# This -- elegantly -- defines a named tuple to hold the elements of a line and names each element according to the column header in the first row.
 ExternalLinksData=collections.namedtuple("ExternalLinksData", line)
 
 # Now read the rest of the data.
@@ -260,7 +261,7 @@ for line in f:  # Each line after the first is a link to an external fanzine
     t2=[]
     for t in temp:
         t2.append(t.strip())
-    links1942.append(ExternalLinksData(*tuple(t2)))
+    links1942.append(ExternalLinksData(*tuple(t2))) # Turn the list into a named tuple.
 
 f.close()
 print("--- Completed reading Links1942.txt")
@@ -319,7 +320,7 @@ for i in range(0, len(fanzines1942)):
     fanzines1942[i]=ExpandedData(fanzine[0], fanzine[1], fanzine[2], isHugoEligible, name, RelPathToURL(url))
 
     # OK, now the problem is to decode the crap at the end to form a list of issue numbers...or something...
-    # ***Skipped for the present***
+    # We'll start by trying to recignize *just* the case where we have a comma-separated list of numbers and nothing else.
 
 print("---Generate the HTML")
 f=open("1942.html", "w")
@@ -367,6 +368,10 @@ for fz in fanzines1942:
 
 f.write("</ul></body>")
 f.close()
+
+# To make life a bit easier, just print out the crap:
+for fz in fanzines1942:
+    print(fz.Stuff)
 
 
 i=0

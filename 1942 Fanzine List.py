@@ -205,7 +205,7 @@ print("--- Completed reading Links1942.txt")
 #   3. We highlight those fanzines which are eligible for a 1942 Hugo
 
 # Define a named tuple to hold the expanded data I get by combining all the sources
-ExpandedData=collections.namedtuple("ExpandedData", "Name Editor Stuff isHugoEligible Name2 URL Issues")
+ExpandedData=collections.namedtuple("ExpandedData", "Name Editor Stuff isHugoEligible NameOnFanac URL Issues")
 
 for i in range(0, len(allFanzines1942)):
     fanzine=allFanzines1942[i]
@@ -292,30 +292,28 @@ for fz in allFanzines1942:
     htm=None
     if fz.isHugoEligible:
         name=fz.Name.title()    # Joe has eligible name all in UC.   Make them normal title case.
-        if fz.Name2 != None:
-            name2=fz.Name2.title()
-        if name2 != None and fz.URL != None:
+        if name != None and fz.URL != None:
             # We have full information for an eligible zine
-            str="Eligible:  "+name+" ("+fz.Editor+") "+fz.Stuff+'     <a href="'+fz.URL+'">'+name2+"</a>"
-            htm='<font color="#FF0000">Eligible</font>&nbsp;&nbsp;<i><a href="'+fz.URL+'">'+name2+"</a></i>"+" ("+fz.Editor+") "+fz.Stuff
-        elif name2 != None and fz.URL == None:
+            str="Eligible:  "+name+" ("+fz.Editor+") "+fz.Stuff+'     <a href="'+fz.URL+'">'+name+"</a>"
+            htm='<font color="#FF0000">Eligible</font>&nbsp;&nbsp;<i><a href="'+fz.URL+'">'+name+"</a></i>"+" ("+fz.Editor+") "+fz.Stuff
+        elif name != None and fz.URL == None:
             # We're missing a URL for an eligible zine
             str="Eligible:  "+name+" ("+fz.Editor+") "+fz.Stuff
-            htm='<font color="#FF0000">Eligible</font>&nbsp;&nbsp;<i><a href="'+fz.URL+'"></i>'+name2+"</a>"+" ("+fz.Editor+") "+fz.Stuff
-        elif name2 == None:
+            htm='<font color="#FF0000">Eligible</font>&nbsp;&nbsp;<i><a href="'+fz.URL+'"></i>'+name+"</a>"+" ("+fz.Editor+") "+fz.Stuff
+        elif name == None:
             # We're missing all information from fanac.org for an eligible fanzine -- it isn't there
             str=name+" ("+fz.Editor+") "+fz.Stuff+"   MISSING from fanac.org"
             htm='<font color="#FF0000">Eligible</font>&nbsp;&nbsp;<i>'+fz.Name+"</i> ("+fz.Editor+") "+fz.Stuff+"&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;(MISSING from fanac.org)"
     else:
-        if fz.Name2 != None and fz.URL != None:
+        if fz.Name != None and fz.URL != None:
             # We have full information for an ineligible zine
-            str=fz.Name+" ("+fz.Editor+") "+fz.Stuff+'     <a href="'+fz.URL+'">'+fz.Name2+"</a>"
-            htm='<i><a href="'+fz.URL+'">'+fz.Name2+"</a></i>"+" ("+fz.Editor+") "+fz.Stuff
-        elif fz.Name2 != None and fz.URL == None:
+            str=fz.Name+" ("+fz.Editor+") "+fz.Stuff+'     <a href="'+fz.URL+'">'+fz.Name+"</a>"
+            htm='<i><a href="'+fz.URL+'">'+fz.Name+"</a></i>"+" ("+fz.Editor+") "+fz.Stuff
+        elif fz.Name != None and fz.URL == None:
             # We're missing a URL for an ineligible item
             str=fz.Name+" ("+fz.Editor+") "+fz.Stuff
-            htm='<i><a href="'+fz.URL+'">&nbsp;&nbsp;'+fz.Name2+"</a></i>"+" ("+fz.Editor+") "+fz.Stuff
-        elif fz.Name2 == None:
+            htm='<i><a href="'+fz.URL+'">&nbsp;&nbsp;'+fz.Name+"</a></i>"+" ("+fz.Editor+") "+fz.Stuff
+        elif fz.Name == None:
             # We're missing all infromation from fanac.org for an ineligible fanzine -- it isn't there
             str=fz.Name+" ("+fz.Editor+") "+fz.Stuff+"   MISSING from fanac.org"
             htm='<i>'+fz.Name+"</i> ("+fz.Editor+") "+fz.Stuff+"&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;(MISSING from fanac.org)"

@@ -307,21 +307,20 @@ for i in range(0, len(allFanzines1942)):
         continue
 
     # OK, spl is now a list of one or more comma-separated items from Stuff
-    # See if they're all numbers
-    isInt=True
+    # See if they're all interpretable as issue numbers
+    isReasonable=True
     for s in spl:
-        try:
-            int(s)
-        except:
-            isInt=False
+        vol, num=Helpers.DecodeIssueDesignation(s)
+        if num == None:
+            isReasonable=False
             break
 
-    if not isInt:
-        print("Not all integers: "+str(spl))
+    if not isReasonable:
+        print("Not all interpretable: "+str(spl))
 
 # ... more to do here!
 
-del isInt, s, spl, i, stuff
+del isReasonable, s, spl, i, stuff
 
 
 

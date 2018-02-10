@@ -1,6 +1,7 @@
 import os
 from bs4 import NavigableString
 
+#-----------------------------------------
 # Find text bracketed by <b>...</b>
 # Return the contents of the first pair of brackets found and the remainder of the input string
 def FindBracketedText(s, b):
@@ -18,7 +19,7 @@ def FindBracketedText(s, b):
     return s[l1+1:l2], s[l2+3+len(b):]
 
 #-------------------------------------
-# Inline definition of a function to pull and hfref and accompanying text from a Tag
+# Function to pull and hfref and accompanying text from a Tag
 # The structure is "<a href='URL'>LINKTEXT</a>
 # We want to extract the URL and LINKTEXT
 def GetHrefAndTextFromTag(tag):
@@ -28,42 +29,90 @@ def GetHrefAndTextFromTag(tag):
         href=tag.attrs.get("href")
 
     return (tag.contents[0].string, href)
-# -------------------------------------
 
 #-----------------------------------------
-# Inline defintion of function to generate the proper kind of path.  (This may change depending on the target location of the output.)
+# Function to generate the proper kind of path.  (This may change depending on the target location of the output.)
 def RelPathToURL(relPath):
     if relPath == None:
         return None
     if relPath[0] == ".":
         return "http://www.fanac.org/"+os.path.normpath(os.path.join("fanzines", relPath)).replace("\\", "/")
     return relPath
-#-----------------------------------------
-
 
 #-----------------------------------------
-# Define inline a simple function to name tags for debugging purposes
+# Simple function to name tags for debugging purposes
 def N(tag):
     try:
         return tag.__class__.__name__
     except:
         return "Something"
-#-----------------------------------------
 
 #----------------------------------------
-# Inline definition of a function to compress newline elements from a list of Tags.
+# Function to compress newline elements from a list of Tags.
 def RemoveNewlineRows(tags):
     compressedTags = []
     for row in tags:
         if not isinstance(row, NavigableString):
             compressedTags.append(row)
     return compressedTags
-#----------------------------------------
 
 #---------------------------------------
-# Inline definition of a function to find the index of a string in a list of strings
+# Function to find the index of a string in a list of strings
 def FindIndexOfStringInList(list, str):
     for i in range(0, len(list) - 1):
         if list[i] == str:
             return i
-#---------------------------------------
+
+#--------------------------------------------
+# Function to attempt to decode an issue designation into a volume and number
+# Return a tuple of Volume and Number
+# If there's no volume specified, Volume is None and Number is the whole number
+# If we can't make sense of it, return (None, None), so if the 2nd member of the tuple is None, conversion failed.
+def DecodeIssueDesignation(str):
+    try:
+        return (None, int(str))
+    except:
+        i=0  # A dummy statement since all we want to do with an exception is move on to the next option.
+
+    # Ok, it's not a simple number.  Drop leading and trailing spaces and see if it of the form #nn
+    s=str.strip().lower()
+    if len(s) == 0:
+        return (None, None)
+    if s[0] == "#":
+        s=s[1:]
+        if len(s) == 0:
+            return (None, None)
+        try:
+            return (None, int(s))
+        except:
+            i=0 # A dummy statement since all we want to do with an exception is move on to the next option.
+
+    # This exhausts the single number possibilities
+    # Maybe it's of the form Vnn, #nn (or Vnn.nn or Vnn,#nn)
+
+    # Strip any leading 'v'
+    if len(s) == 0:
+        return (None, None)
+    if s[0] == "v":
+        s=s[1:]
+        if len(s) == 0:
+            return (None, None)
+
+    # The first step is to see if there's at least one of the characters ' ', '.', and '#' in the middle
+    # We split the string in two by a span of " .#"
+    # Walk through the string until we;ve passed the first span of digits.  Then look for a span of " .#". The look for at least one more digit.
+    # Since we've dropped any leading 'v', we kno we must be of the form nn< .#>nnn
+    # So if the first character is not a digit, we give up.
+    if not s[0].isdigit():
+        return (None, None)
+
+    # Now, the only legetimate charcater other than digits are the three delimiters, so translate them all to blanks and then split into the two digit strings
+    spl=s.replace(".", " ").replace("#", " ").split()
+    if len(spl) != 2:
+        return (None, None)
+    try:
+        return (int(spl[0]), int(spl[1]))
+    except:
+        return (None, None)
+
+

@@ -34,6 +34,8 @@ for tag in table:
         hrefLinkText, hrefUrl=Helpers.GetHrefAndTextFromTag(a)
         listOf1942s[hrefLinkText.lower()]=(hrefLinkText, hrefUrl)
 
+del tag, tag2, hrefUrl, hrefLinkText, a, s, table
+
 # Now we have a dictionary containing the names and URLs of the 1942 fanzines.
 # The next step is to figure out what 1942 issues of each we have on the website
 # We do this by reading the fanzines/<name>/index.html file and then decoding the table in it.
@@ -137,6 +139,7 @@ for (key, (title, relPath)) in listOf1942s.items():
         if row[yearCol] == "1942":
             print(row[issueCol][1])
 
+del yearCol, issueCol, titleCol, row, i, tableRow, columnHeaders, tableHeader, col, key, title, relPath, s, h, j, b
 print("---Starting read of 1942 Fanzine List.txt")
 
 # Define a named tuple to hold the data I get from Joe's input file
@@ -168,6 +171,7 @@ for line in f:  # Each line is a fanzine
     allFanzines1942.append(JoesData(line[:loc1-1], line[loc1+1:loc2].title(), line[loc2+1:]))
 
 f.close()
+del f, line, temp, loc1, loc2
 print("---fanzines1942 list created with "+str(len(allFanzines1942))+" elements")
 
 
@@ -197,6 +201,7 @@ for line in f:  # Each line after the first is a link to an external fanzine
     externalLinks1942.append(ExternalLinksData(*tuple(t2))) # Turn the list into a named tuple.
 
 f.close()
+del f, line, t2, t, temp
 print("--- Completed reading Links1942.txt")
 
 # Now we go through the list we just parsed and generate the output document.
@@ -205,7 +210,7 @@ print("--- Completed reading Links1942.txt")
 #   3. We highlight those fanzines which are eligible for a 1942 Hugo
 
 # Define a named tuple to hold the expanded data I get by combining all the sources
-ExpandedData=collections.namedtuple("ExpandedData", "Name Editor Stuff isHugoEligible NameOnFanac URL Issues")
+ExpandedData=collections.namedtuple("ExpandedData", "Name Editor Stuff IsHugoEligible NameOnFanac URL Issues")
 
 for i in range(0, len(allFanzines1942)):
     fanzine=allFanzines1942[i]
@@ -252,6 +257,41 @@ for i in range(0, len(allFanzines1942)):
     # Update the 1942 fanzines list with the new information
     allFanzines1942[i]=ExpandedData(fanzine[0], fanzine[1], fanzine[2], isHugoEligible, name, Helpers.RelPathToURL(url), None)
 
+del fanzine, ex, jname, name, url, i, isHugoEligible
+
+print("----Begin reading Fanac fanzine directory formats.txt")
+# Next we read the table of fanac.org file formats.
+# Fanac.org's fanzines are *mostly* in one format, but there are at least a dozen different ways of presenting them.
+# The table will allow us to pick the right method for reading the index.html file and locating the right issue URL
+try:
+    f=open("Fanac fanzine directory formats.txt", "r")
+except:
+    print("Can't open 'Fanac fanzine directory formats.txt'")
+
+# Read the file.  Lines beginning with a # are comments and are ignored
+# Date lines consist of a commz-separated list:
+#       The first two elements are code numbers
+#       The remaining elements are directories in fanac.org/fanzines
+#       We create a dictionary of fanzine directory names in lower case.
+#       The value of each directory entry is a tuple consisting of Name (full case) folowed by the two numbers.
+fanacFanzineDirectoryFormats={}
+for line in f:
+    line=line.strip()   # Make sure there are no leading or traling blanks
+    if len(line) == 0 or line[0] == "#":    # Ignore some lines
+        continue
+    # We apparently have a data line. Split it into tokens. Remove leading and traling blanks, but not internal blanks.
+    spl=line.split(",")
+    if len(spl) < 3:    # There has to be at least three tokens (the two numbers and at least one directory name)
+        print("***Something's wrong with "+line)
+        continue
+    nums=spl[:2]
+    spl=spl[2:]
+    for dir in spl:
+        fanacFanzineDirectoryFormats[dir.lower()]=(nums[0], nums[1], dir)
+
+del line, spl, nums, dir
+print("----Done reading Fanac fanzine directory formats.txt")
+
 # OK, now the problem is to decode the crap at the end to form a list of issue numbers...or something...
 # We'll start by trying to recognize *just* the case where we have a comma-separated list of numbers and nothing else.
 for i in range(0, len(allFanzines1942)):
@@ -279,18 +319,23 @@ for i in range(0, len(allFanzines1942)):
     if not isInt:
         print("Not all integers: "+str(spl))
 
+# ... more to do here!
+
+del isInt, s, spl, i, stuff
+
 
 
 print("---Generate the HTML")
 f=open("1942.html", "w")
 f.write("<body>\n")
 f.write("<ul>\n")
+
 # Create the HTML file
 for fz in allFanzines1942:
     print(fz)
 
     htm=None
-    if fz.isHugoEligible:
+    if fz.IsHugoEligible:
         name=fz.Name.title()    # Joe has eligible name all in UC.   Make them normal title case.
         if name != None and fz.URL != None:
             # We have full information for an eligible zine
@@ -299,11 +344,11 @@ for fz in allFanzines1942:
         elif name != None and fz.URL == None:
             # We're missing a URL for an eligible zine
             str="Eligible:  "+name+" ("+fz.Editor+") "+fz.Stuff
-            htm='<font color="#FF0000">Eligible</font>&nbsp;&nbsp;<i><a href="'+fz.URL+'"></i>'+name+"</a>"+" ("+fz.Editor+") "+fz.Stuff
-        elif name == None:
+            htm='<font color="#FF0000">Eligible</font>&nbsp;&nbsp;<i>'+name+"</i>"+" ("+fz.Editor+") "+fz.Stuff
+        else:
             # We're missing all information from fanac.org for an eligible fanzine -- it isn't there
-            str=name+" ("+fz.Editor+") "+fz.Stuff+"   MISSING from fanac.org"
-            htm='<font color="#FF0000">Eligible</font>&nbsp;&nbsp;<i>'+fz.Name+"</i> ("+fz.Editor+") "+fz.Stuff+"&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;(MISSING from fanac.org)"
+            str=name+" ("+fz.Editor+") "+fz.Stuff
+            htm='<font color="#FF0000">Eligible</font>&nbsp;&nbsp;<i>'+fz.Name+"</i> ("+fz.Editor+") "+fz.Stuff
     else:
         if fz.Name != None and fz.URL != None:
             # We have full information for an ineligible zine
@@ -312,11 +357,11 @@ for fz in allFanzines1942:
         elif fz.Name != None and fz.URL == None:
             # We're missing a URL for an ineligible item
             str=fz.Name+" ("+fz.Editor+") "+fz.Stuff
-            htm='<i><a href="'+fz.URL+'">&nbsp;&nbsp;'+fz.Name+"</a></i>"+" ("+fz.Editor+") "+fz.Stuff
-        elif fz.Name == None:
-            # We're missing all infromation from fanac.org for an ineligible fanzine -- it isn't there
-            str=fz.Name+" ("+fz.Editor+") "+fz.Stuff+"   MISSING from fanac.org"
-            htm='<i>'+fz.Name+"</i> ("+fz.Editor+") "+fz.Stuff+"&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;(MISSING from fanac.org)"
+            htm='<i>'+fz.Name+"</a></i>"+" ("+fz.Editor+") "+fz.Stuff
+        else:
+            # We're missing all information from fanac.org for an ineligible fanzine -- it isn't there
+            str=fz.Name+" ("+fz.Editor+") "+fz.Stuff
+            htm='<i>'+fz.Name+"</i> ("+fz.Editor+") "+fz.Stuff
 
     print(str)
     if htm != None:
@@ -324,6 +369,17 @@ for fz in allFanzines1942:
         f.write(htm+"</li>\n")
 
 f.write("</ul></body>")
+f.flush()
 f.close()
+
+f2=open("1942 Fanzines Not on fanac.txt", "w")
+f2.write("1942 Fanzines not on fanac.org\n\n")
+for fz in allFanzines1942:
+    if fz.NameOnFanac == None or fz.URL == None:
+        f2.write(fz.Name+"\n")
+f2.flush()
+f2.close()
+del f2, htm, str, fz
+
 
 i=0

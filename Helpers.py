@@ -34,7 +34,7 @@ def GetHrefAndTextFromTag(tag):
 # Inline defintion of function to generate the proper kind of path.  (This may change depending on the target location of the output.)
 def RelPathToURL(relPath):
     if relPath == None:
-        return "<no path>"
+        return None
     if relPath[0] == ".":
         return "http://www.fanac.org/"+os.path.normpath(os.path.join("fanzines", relPath)).replace("\\", "/")
     return relPath

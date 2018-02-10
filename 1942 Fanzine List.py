@@ -292,6 +292,9 @@ for line in f:
 del line, spl, nums, dir
 print("----Done reading Fanac fanzine directory formats.txt")
 
+# Define a named tuple to hold the an issue number
+IssueNumber=collections.namedtuple("IssueNumber", "Vol Num")
+
 # OK, now the problem is to decode the crap at the end to form a list of issue numbers...or something...
 # We'll start by trying to recognize *just* the case where we have a comma-separated list of numbers and nothing else.
 for i in range(0, len(allFanzines1942)):
@@ -308,19 +311,20 @@ for i in range(0, len(allFanzines1942)):
 
     # OK, spl is now a list of one or more comma-separated items from Stuff
     # See if they're all interpretable as issue numbers
+    listOfIssues=[]     # A list of issue tuples
     isReasonable=True
     for s in spl:
-        vol, num=Helpers.DecodeIssueDesignation(s)
-        if num == None:
+        iss=IssueNumber(*Helpers.DecodeIssueDesignation(s))
+        if iss.Num == None:
             isReasonable=False
             break
-
-    if not isReasonable:
+        listOfIssues.append(iss)
+    if isReasonable:
+        allFanzines1942[i]=ExpandedData(fz.Name, fz.Editor, fz.Stuff, fz.IsHugoEligible, fz.NameOnFanac, fz.URL, listOfIssues)
+    else:
         print("Not all interpretable: "+str(spl))
 
-# ... more to do here!
-
-del isReasonable, s, spl, i, stuff
+del isReasonable, s, spl, i, stuff, listOfIssues, iss
 
 
 

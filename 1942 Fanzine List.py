@@ -17,7 +17,7 @@ table=s.body.ol.contents
 #       A <br/> tag
 # All we care about is the <ul> tag, which we need to decode to find individual fanzines.
 # Loop over the tags to find entries
-listOf1942s = dict()
+listOf1942FanzinesOnFanac = dict()
 for tag in table:
     if tag.name != "ul":
         continue
@@ -32,7 +32,7 @@ for tag in table:
         # This is the first member of the tag's contents list.
         a=tag2.contents[0]
         hrefLinkText, hrefUrl=Helpers.GetHrefAndTextFromTag(a)
-        listOf1942s[hrefLinkText.lower()]=(hrefLinkText, hrefUrl)
+        listOf1942FanzinesOnFanac[hrefLinkText.lower()]=(hrefLinkText, hrefUrl)
 
 del tag, tag2, hrefUrl, hrefLinkText, a, s, table
 
@@ -41,7 +41,7 @@ del tag, tag2, hrefUrl, hrefLinkText, a, s, table
 # We do this by reading the fanzines/<name>/index.html file and then decoding the table in it.
 
 # Loop over the list of fanzines
-for (key, (title, relPath)) in listOf1942s.items():
+for (key, (title, relPath)) in listOf1942FanzinesOnFanac.items():
 
     # The URL we get is relative to the fanzines directory which has the URL fanac.org/fanzines
     # We need to turn relPath into a URL
@@ -56,35 +56,8 @@ for (key, (title, relPath)) in listOf1942s.items():
     # Because the structures of the pages are so random, we need to search the body for the table.
     # *So far* all of the tables have been headed by <table border="1" cellpadding="5">, so we look for that.
 
-    # ----------------------------------------
-    # Inline definition of a function to search recursively for the table containing the fanzines listing
-    def LookForTable(tag):
-        #print("call LookForTable with tag=", N(tag))
-        for stuff in tag:
-            #print ("   stuff=", stuff.name)
-            if stuff.name == "table":
-                #print("   Table found!!!")
-                # Next, we check the table to see if it has the values table border="1" cellpadding="5"
-                try:
-                    if stuff.attrs["border"] == "1" and stuff.attrs["cellpadding"] == "5":
-                        return stuff
-                except:
-                    continue
-            try:
-                if len(stuff.contents) > 0:
-                    val=LookForTable(stuff.contents)
-                if val != None:
-                    #print("   val popped")
-                    return val
-            except:
-                continue
-        #print("   Return None")
-        return None
-    #----------------------------------------
-
-    # And now use it.
-    val=LookForTable(b)
-    if val == None:
+    tab=Helpers.LookForTable(b)
+    if tab == None:
         print("*** No Table found!")
         continue
 
@@ -93,10 +66,10 @@ for (key, (title, relPath)) in listOf1942s.items():
     # Subsequent rows are fanzine issue rows
 
     # Some of the items showing up in val.contents will be strings containing newlines -- start by compressing them out.
-    val.contents=Helpers.RemoveNewlineRows(val.contents)
+    tab.contents=Helpers.RemoveNewlineRows(tab.contents)
 
     # Ok. We have the table.  Make a list of the column headers. We need to compress the newlines out of this as well
-    tableHeader = Helpers.RemoveNewlineRows(val.contents[0])
+    tableHeader = Helpers.RemoveNewlineRows(tab.contents[0])
     columnHeaders = []
     for col in tableHeader:
         columnHeaders.append(col.string)
@@ -120,10 +93,10 @@ for (key, (title, relPath)) in listOf1942s.items():
 
     # What's left is one or more rows, each corresponding to an issue of that fanzine.
     # We build up a list of lists.  Each list in the list of lists is a row
-    # We have to treat the Title colum specially, since it contains the critical href we need.
+    # We have to treat the Title column specially, since it contains the critical href we need.
     rows=[]
-    for i in range(1, len(val)):
-        tableRow=Helpers.RemoveNewlineRows(val.contents[i])
+    for i in range(1, len(tab)):
+        tableRow=Helpers.RemoveNewlineRows(tab.contents[i])
         row=[]
         for j in range(0, len(tableRow)-1):
             if (j != issueCol):
@@ -133,14 +106,13 @@ for (key, (title, relPath)) in listOf1942s.items():
 
         rows.append(row)
 
-
     # Now select just the fanzines for 1942
     for row in rows:
         if row[yearCol] == "1942":
             print(row[issueCol][1])
 
 del yearCol, issueCol, titleCol, row, i, tableRow, columnHeaders, tableHeader, col, key, title, relPath, s, h, j, b
-print("---Starting read of 1942 Fanzine List.txt")
+print("---Starting read of Joe's 1942 Fanzine List.txt")
 
 # Define a named tuple to hold the data I get from Joe's input file
 JoesData=collections.namedtuple("JoesData", "Name Editor Stuff")
@@ -175,7 +147,7 @@ del f, line, temp, loc1, loc2
 print("---fanzines1942 list created with "+str(len(allFanzines1942))+" elements")
 
 
-print("--- Read Links1942.txt")
+print("----Start reading Links1942.txt")
 # Now we read Links1942.txt, which contains links to issues of fanzines *outside* fanac.org.
 # It's organized as a table, with the first row a ';'-delimited list of column headers
 #    and the remaining rows are each a ';'-delimited pointer to an exteral fanzine
@@ -202,8 +174,9 @@ for line in f:  # Each line after the first is a link to an external fanzine
 
 f.close()
 del f, line, t2, t, temp
-print("--- Completed reading Links1942.txt")
+print("----Done reading Links1942.txt")
 
+print("----Begin combining information into one table.")
 # Now we go through the list we just parsed and generate the output document.
 #   1. We link the fanzine name to the fanzine page on fanac.org
 #   2. We link each issue number to the individual issue
@@ -227,13 +200,13 @@ for i in range(0, len(allFanzines1942)):
     # We want to look up the entries from Joe's list and see if they are on it.
     name=None
     url=None
-    if jname.lower() in listOf1942s:
-        name, url=listOf1942s[jname.lower()]
+    if jname.lower() in listOf1942FanzinesOnFanac:
+        name, url=listOf1942FanzinesOnFanac[jname.lower()]
         print("   Found (1): "+name +" --> " + url)
     else:
         # Try adding a trailing ", the"since sometimes Joe's list omits this
-        if (jname.lower()+", the") in listOf1942s:
-            name, url = listOf1942s[jname.lower()+", the"]
+        if (jname.lower()+", the") in listOf1942FanzinesOnFanac:
+            name, url = listOf1942FanzinesOnFanac[jname.lower()+", the"]
             print("   Found (2): " + name + " --> " + url)
         else:
             print("   Not found: "+jname)
@@ -258,6 +231,7 @@ for i in range(0, len(allFanzines1942)):
     allFanzines1942[i]=ExpandedData(fanzine[0], fanzine[1], fanzine[2], isHugoEligible, name, Helpers.RelPathToURL(url), None)
 
 del fanzine, ex, jname, name, url, i, isHugoEligible
+print("----Done combining information into one table.")
 
 print("----Begin reading Fanac fanzine directory formats.txt")
 # Next we read the table of fanac.org file formats.
@@ -292,6 +266,7 @@ for line in f:
 del line, spl, nums, dir
 print("----Done reading Fanac fanzine directory formats.txt")
 
+print("----Begin decoding issue list in list of all 1942 fanzines")
 # Define a named tuple to hold the an issue number
 IssueNumber=collections.namedtuple("IssueNumber", "Vol Num")
 
@@ -325,10 +300,24 @@ for i in range(0, len(allFanzines1942)):
         print("Not all interpretable: "+str(spl))
 
 del isReasonable, s, spl, i, stuff, listOfIssues, iss
+print("----Done decoding issue list in list of all 1942 fanzines")
 
 
+# Next we do the arduous business of looking at fanac.org and finding the URLs that go with each issue
+# For each fanzine, we need to:
+#       Given the fanzine name, find its directory name
+#       Get the directory's index.html file
+#       Look up the type of index.html file we have
+#       If it's one we know how to interpret, we:
+#           Go down the list of issue designators
+#           Look up the URL for that issue in the index.html file
+#           Add the URL to the issue designator
+for i in range(0, len(allFanzines1942)):
+    fz=allFanzines1942[i]
+    name=fz.NameOnFanac
 
-print("---Generate the HTML")
+
+print("----Begin generating the HTML")
 f=open("1942.html", "w")
 f.write("<body>\n")
 f.write("<ul>\n")
@@ -383,6 +372,8 @@ for fz in allFanzines1942:
 f2.flush()
 f2.close()
 del f2, htm, str, fz
+
+print("----Done generating the HTML")
 
 
 i=0

@@ -1,5 +1,9 @@
 import os
+import re
 from bs4 import NavigableString
+from bs4 import BeautifulSoup
+import requests
+import collections
 
 #-----------------------------------------
 # Find text bracketed by <b>...</b>
@@ -140,3 +144,5 @@ def LookForTable(tag):
             continue
     #print("   Return None")
     return None
+
+

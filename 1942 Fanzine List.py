@@ -186,8 +186,15 @@ for i in range(0, len(allFanzines1942)):
 print("----Begin generating the HTML")
 f=open("1942.html", "w")
 f.write("<body>\n")
-f.write('<table border="0" width="100%" cellspacing="0" cellpadding="0" style="margin-top: 0; margin-bottom: 0">\n<tr>\n<td valign="top" align="left">')
-f.write("<ul>\n")
+f.write('<style>\n')
+f.write('<!--\n')
+f.write('p            { line-height: 100%; margin-top: 0; margin-bottom: 0 }\n')
+f.write('-->\n')
+f.write('</style>\n')
+f.write('<table border="0" cellspacing="0" cellpadding="0" style="margin-top: 0; margin-bottom: 0">\n')
+f.write('<tr>\n')
+f.write('<td valign="top" align="left">\n')
+f.write('<ul>\n')
 
 # Create the HTML file
 linecount=0

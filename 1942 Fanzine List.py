@@ -158,9 +158,9 @@ for i in range(0, len(allFanzines1942)):
             isReasonable=False
             break
         listOfIssues.append(iss)
-    if isReasonable:
-        allFanzines1942[i]=ExpandedData(fz.Name, fz.Editor, fz.Stuff, fz.IsHugoEligible, fz.NameOnFanac, fz.URL, listOfIssues)
-    else:
+
+    allFanzines1942[i]=ExpandedData(fz.Name, fz.Editor, fz.Stuff, fz.IsHugoEligible, fz.NameOnFanac, fz.URL, listOfIssues)
+    if not isReasonable:
         print("Not all interpretable: "+str(spl))
 
 del isReasonable, s, spl, i, stuff, listOfIssues, iss
@@ -192,36 +192,64 @@ f.write("<ul>\n")
 for fz in allFanzines1942:
     print(fz)
 
+    #-------------------------------------
+    # Inline function to format Stuff
+    # Stuff is commonly a list of issue specification interspersed with nonce items
+    # For now, we'll attempt only to format what we interpret, above: whole numbers and Vol/# combinations
+    def FormatStuff(fz):
+        ex=fz.Issues
+        if ex == None or len(ex) == 0:
+            return fz.Stuff
+        out=""
+        for issue in ex:
+            # issue is a tuple of a vol and a num.
+            # If both exists, it is a Vn#n pair
+            # If V is none, then num is a whole number.
+            # Neither existing should never happen
+            if issue[0] == None and issue[1] == None:
+                v="(oops) "+ fz.Stuff
+
+            elif issue[0] == None:
+                v= str(issue[1])
+
+            else:
+                v="V"+str(issue[0])+"#"+str(issue[1])
+
+            if len(out) > 0:
+                out=out+", "
+            out=out+v
+        return out
+
     htm=None
     if fz.IsHugoEligible:
         name=fz.Name.title()    # Joe has eligible name all in UC.   Make them normal title case.
         if name != None and fz.URL != None:
             # We have full information for an eligible zine
-            str="Eligible:  "+name+" ("+fz.Editor+") "+fz.Stuff+'     <a href="'+fz.URL+'">'+name+"</a>"
-            htm='<font color="#FF0000">Eligible</font>&nbsp;&nbsp;<i><a href="'+fz.URL+'">'+name+"</a></i>"+" ("+fz.Editor+") <br>"+fz.Stuff
+            txt="Eligible:  "+name+" ("+fz.Editor+") "+fz.Stuff+'     <a href="'+fz.URL+'">'+name+"</a>"
+            htm='<font color="#FF0000">Eligible</font>&nbsp;&nbsp;<i><a href="'+fz.URL+'">'+name+"</a></i>"+" ("+fz.Editor+") <br>"+FormatStuff(fz)
         elif name != None and fz.URL == None:
             # We're missing a URL for an eligible zine
-            str="Eligible:  "+name+" ("+fz.Editor+") "+fz.Stuff
-            htm='<font color="#FF0000">Eligible</font>&nbsp;&nbsp;<i>'+name+"</i>"+" ("+fz.Editor+") <br>"+fz.Stuff
+            txt="Eligible:  "+name+" ("+fz.Editor+") "+fz.Stuff
+            htm='<font color="#FF0000">Eligible</font>&nbsp;&nbsp;<i>'+name+"</i>"+" ("+fz.Editor+") <br>"+FormatStuff(fz)
         else:
             # We're missing all information from fanac.org for an eligible fanzine -- it isn't there
-            str=name+" ("+fz.Editor+") "+fz.Stuff
-            htm='<font color="#FF0000">Eligible</font>&nbsp;&nbsp;<i>'+fz.Name+"</i> ("+fz.Editor+") <br>"+fz.Stuff
+            txt=name+" ("+fz.Editor+") "+fz.Stuff
+            htm='<font color="#FF0000">Eligible</font>&nbsp;&nbsp;<i>'+fz.Name+"</i> ("+fz.Editor+") <br>"+FormatStuff(fz)
     else:
         if fz.Name != None and fz.URL != None:
             # We have full information for an ineligible zine
-            str=fz.Name+" ("+fz.Editor+") "+fz.Stuff+'     <a href="'+fz.URL+'">'+fz.Name+"</a>"
-            htm='<i><a href="'+fz.URL+'">'+fz.Name+"</a></i>"+" ("+fz.Editor+") <br>"+fz.Stuff
+            txt=fz.Name+" ("+fz.Editor+") "+fz.Stuff+'     <a href="'+fz.URL+'">'+fz.Name+"</a>"
+            htm='<i><a href="'+fz.URL+'">'+fz.Name+"</a></i>"+" ("+fz.Editor+") <br>"+FormatStuff(fz)
         elif fz.Name != None and fz.URL == None:
             # We're missing a URL for an ineligible item
-            str=fz.Name+" ("+fz.Editor+") "+fz.Stuff
-            htm='<i>'+fz.Name+"</a></i>"+" ("+fz.Editor+") <br>"+fz.Stuff
+            txt=fz.Name+" ("+fz.Editor+") "+fz.Stuff
+            htm='<i>'+fz.Name+"</a></i>"+" ("+fz.Editor+") <br>"+FormatStuff(fz)
         else:
             # We're missing all information from fanac.org for an ineligible fanzine -- it isn't there
-            str=fz.Name+" ("+fz.Editor+") "+fz.Stuff
-            htm='<i>'+fz.Name+"</i> ("+fz.Editor+") <br>"+fz.Stuff
+            txt=fz.Name+" ("+fz.Editor+") "+fz.Stuff
+            htm='<i>'+fz.Name+"</i> ("+fz.Editor+") <br>"+FormatStuff(fz)
 
-    print(str)
+    print(txt)
     if htm != None:
         f.write("<li><p>\n")
         f.write(htm+"</li>\n")
@@ -237,7 +265,7 @@ for fz in allFanzines1942:
         f2.write(fz.Name+"\n")
 f2.flush()
 f2.close()
-del f2, htm, str, fz
+del f2, htm, txt, fz
 
 print("----Done generating the HTML")
 

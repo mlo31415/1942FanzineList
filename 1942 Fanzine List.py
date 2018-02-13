@@ -186,9 +186,11 @@ for i in range(0, len(allFanzines1942)):
 print("----Begin generating the HTML")
 f=open("1942.html", "w")
 f.write("<body>\n")
+f.write('<table border="0" width="100%" cellspacing="0" cellpadding="0" style="margin-top: 0; margin-bottom: 0">\n<tr>\n<td valign="top" align="left">')
 f.write("<ul>\n")
 
 # Create the HTML file
+linecount=0
 for fz in allFanzines1942:
     print(fz)
 
@@ -219,6 +221,7 @@ for fz in allFanzines1942:
                 out=out+", "
             out=out+v
         return out
+    #-----------------------
 
     htm=None
     if fz.IsHugoEligible:
@@ -226,15 +229,15 @@ for fz in allFanzines1942:
         if name != None and fz.URL != None:
             # We have full information for an eligible zine
             txt="Eligible:  "+name+" ("+fz.Editor+") "+fz.Stuff+'     <a href="'+fz.URL+'">'+name+"</a>"
-            htm='<font color="#FF0000">Eligible</font>&nbsp;&nbsp;<i><a href="'+fz.URL+'">'+name+"</a></i>"+" ("+fz.Editor+") <br>"+FormatStuff(fz)
+            htm='<i><a href="'+fz.URL+'">'+name+'</a></i>&nbsp;&nbsp;<font color="#FF0000">(Eligible)</font>&nbsp;&nbsp;'+" ("+fz.Editor+") <br>"+FormatStuff(fz)
         elif name != None and fz.URL == None:
             # We're missing a URL for an eligible zine
             txt="Eligible:  "+name+" ("+fz.Editor+") "+fz.Stuff
-            htm='<font color="#FF0000">Eligible</font>&nbsp;&nbsp;<i>'+name+"</i>"+" ("+fz.Editor+") <br>"+FormatStuff(fz)
+            htm='<i>'+name+"</i>"+'&nbsp;&nbsp;<font color="#FF0000">(Eligible)</font>&nbsp;&nbsp; ('+fz.Editor+") <br>"+FormatStuff(fz)
         else:
             # We're missing all information from fanac.org for an eligible fanzine -- it isn't there
             txt=name+" ("+fz.Editor+") "+fz.Stuff
-            htm='<font color="#FF0000">Eligible</font>&nbsp;&nbsp;<i>'+fz.Name+"</i> ("+fz.Editor+") <br>"+FormatStuff(fz)
+            htm='<i>'+fz.Name+'</i>&nbsp;&nbsp;<font color="#FF0000">(Eligible)</font>&nbsp;&nbsp; ('+fz.Editor+") <br>"+FormatStuff(fz)
     else:
         if fz.Name != None and fz.URL != None:
             # We have full information for an ineligible zine
@@ -248,13 +251,17 @@ for fz in allFanzines1942:
             # We're missing all information from fanac.org for an ineligible fanzine -- it isn't there
             txt=fz.Name+" ("+fz.Editor+") "+fz.Stuff
             htm='<i>'+fz.Name+"</i> ("+fz.Editor+") <br>"+FormatStuff(fz)
+    linecount=linecount+1
+    if linecount == len(allFanzines1942)/2:
+        f.write('</td>\n<td valign="top" align="left">\n<ul>')
 
     print(txt)
     if htm != None:
-        f.write("<li><p>\n")
-        f.write(htm+"</li>\n")
+        f.write('<li><p>\n')
+        f.write(htm+'</li>\n')
 
-f.write("</ul></body>")
+f.write('</td>\n</tr>\n</table>')
+f.write('</ul></body>')
 f.flush()
 f.close()
 

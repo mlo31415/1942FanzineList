@@ -6,7 +6,6 @@ import FanacNames
 import FanacOrgReaders
 import RetroHugoReaders
 
-
 # Create the list of FanacName tuples which will be used by FanacName functions
 FanacOrgReaders.ReadClassicModernPages()
 
@@ -19,55 +18,12 @@ allFanzines1942=RetroHugoReaders.Read1942FanzineList()
 # A list of all 1942 fanzines with issue information
 listOf1942FanzinesOnFanac=RetroHugoReaders.ReadRetro_HugosTxtFile()
 
-# A dictionary of fanzine directory formats
-fanacFanzineDirectoryFormats=FanacOrgReaders.ReadFanacOrgFormatsTxt()
-
 # A dictionary of links of individual issues to external websites
+global externalLinks1942
 externalLinks1942=RetroHugoReaders.ReadLinks1942Txt()
 
-
-#============================================================================================
-# Read index.html files on fanac.org
-# We have a dictionary containing the names and URLs of the 1942 fanzines.
-# The next step is to figure out what 1942 issues of each we have on the website
-# We do this by reading the fanzines/<name>/index.html file and then decoding the table in it.
-# What we get out of this is a list of fanzines with name, URL, and issue info.
-
-# Loop over the list of all 1942 fanzines, building up a list of those on fanac.org
-print("----Begin reading index.html files on fanac.org")
-fanacIssueInfo=[]
-for (key, (title, relPath)) in listOf1942FanzinesOnFanac.items():
-
-    # Get the index file format for this directory
-    try:
-        dn=FanacNames.DirName(title.lower())
-        fmt=fanacFanzineDirectoryFormats[dn.lower()]
-        print("   Format: "+title + " --> "+FanacNames.StandardizeName(title.lower()) + " --> " + str(fmt))
-    except:
-        print("   Format: "+title + " --> "+FanacNames.StandardizeName(title.lower()) + " -->  (0, 0)")
-        # This is actually a good thing, because it means that the fanzines has the default index.html type
-        print("   fanacFanzineDirectoryFormats["+title.lower()+"] not found")
-        # The URL we get is relative to the fanzines directory which has the URL fanac.org/fanzines
-        # We need to turn relPath into a URL
-        url=Helpers.RelPathToURL(relPath)
-        print(title, " ", url)
-        ret=FanacOrgReaders.ReadFanacFanzineIndexPage(title, url, (0,0, None), fanacIssueInfo)
-        if ret != None:
-            fanacIssueInfo=ret
-        continue
-
-    # The URL we get is relative to the fanzines directory which has the URL fanac.org/fanzines
-    # We need to turn relPath into a URL
-    url=Helpers.RelPathToURL(relPath)
-    print(title, " ", url)
-    ret=FanacOrgReaders.ReadFanacFanzineIndexPage(title, url, fmt, fanacIssueInfo)
-    if ret != None:
-        fanacIssueInfo=ret
-
-del url, key, title, relPath, ret
-# Now we have a list of all the issues of fanzines onfanac.org which have at least one 1942 issue.(Not all of the issues are 1942.)
-print("----Done reading index.html files on fanac.org")
-
+# Read the fanac.org fanzine direcgtory and produce a lost of all issues present
+FanacOrgReaders.ReadFanacFanzineIssues(listOf1942FanzinesOnFanac)
 
 
 #============================================================================================
@@ -84,7 +40,7 @@ for i in range(0, len(allFanzines1942)):
     fanzine=allFanzines1942[i]
 
     # First we take the fanzine name from Joe's 1942 Fanzine List.txt and match it to a 1942 fanzine on fanac.org
-    jname=fanzine[0]
+    jname=fanzine.Name
 
     isHugoEligible=False        # Joe has tagged Hugo-eligible fanzines by making their name to be all-caps
     if jname == jname.upper():
@@ -110,20 +66,22 @@ for i in range(0, len(allFanzines1942)):
     if name == None:
         for ex in externalLinks1942:
             if jname.lower() == ex.Title.lower():
-                name, url = (ex.Title, ex.URL)
+                name=ex.Title
+                url=ex.URL
                 print("   Found (3): " + name + " --> " + url)
                 break
             else:
                 # Try adding a trailing ", the"since sometimes Joe's list omits this
                 if (jname.lower() + ", the") == ex.Title.lower():
-                    name, url =  (ex.Title, ex.URL)
+                    name=ex.Title
+                    url=ex.URL
                     print("   Found (4): " + name + " --> " + url)
                     break
     if name == None:
         print("   Not found (5): " + jname)
 
     # Update the 1942 fanzines list with the new information
-    allFanzines1942[i]=ExpandedData(fanzine[0], fanzine[1], fanzine[2], isHugoEligible, name, Helpers.RelPathToURL(url), None)
+    allFanzines1942[i]=ExpandedData(Name=fanzine.Name, Editor=fanzine.Editor, Stuff=fanzine.Stuff, IsHugoEligible=isHugoEligible, NameOnFanac=name, URL=Helpers.RelPathToURL(url), Issues=None)
 
 del fanzine, ex, jname, name, url, i, isHugoEligible
 print("----Done combining information into one table.")
@@ -159,27 +117,14 @@ for i in range(0, len(allFanzines1942)):
             break
         listOfIssues.append(iss)
 
-    allFanzines1942[i]=ExpandedData(fz.Name, fz.Editor, fz.Stuff, fz.IsHugoEligible, fz.NameOnFanac, fz.URL, listOfIssues)
+    allFanzines1942[i]._replace(Issues=listOfIssues)
+
     if not isReasonable:
         print("Not all interpretable: "+str(spl))
 
 del isReasonable, s, spl, i, stuff, listOfIssues, iss
 print("----Done decoding issue list in list of all 1942 fanzines")
 
-
-#============================================================================================
-# Next we do the arduous business of looking at fanac.org and finding the URLs that go with each issue
-# For each fanzine, we need to:
-#       Given the fanzine name, find its directory name
-#       Get the directory's index.html file
-#       Look up the type of index.html file we have
-#       If it's one we know how to interpret, we:
-#           Go down the list of issue designators
-#           Look up the URL for that issue in the index.html file
-#           Add the URL to the issue designator
-for i in range(0, len(allFanzines1942)):
-    fz=allFanzines1942[i]
-    name=fz.NameOnFanac
 
 
 #============================================================================================
@@ -199,36 +144,7 @@ f.write('<ul>\n')
 # Create the HTML file
 linecount=0
 for fz in allFanzines1942:
-    print(fz)
-
-    #-------------------------------------
-    # Inline function to format Stuff
-    # Stuff is commonly a list of issue specification interspersed with nonce items
-    # For now, we'll attempt only to format what we interpret, above: whole numbers and Vol/# combinations
-    def FormatStuff(fz):
-        ex=fz.Issues
-        if ex == None or len(ex) == 0:
-            return fz.Stuff
-        out=""
-        for issue in ex:
-            # issue is a tuple of a vol and a num.
-            # If both exists, it is a Vn#n pair
-            # If V is none, then num is a whole number.
-            # Neither existing should never happen
-            if issue[0] == None and issue[1] == None:
-                v="(oops) "+ fz.Stuff
-
-            elif issue[0] == None:
-                v= str(issue[1])
-
-            else:
-                v="V"+str(issue[0])+"#"+str(issue[1])
-
-            if len(out) > 0:
-                out=out+", "
-            out=out+v
-        return out
-    #-----------------------
+    print("   Writing HTML for: "+str(fz))
 
     htm=None
     if fz.IsHugoEligible:
@@ -236,28 +152,28 @@ for fz in allFanzines1942:
         if name != None and fz.URL != None:
             # We have full information for an eligible zine
             txt="Eligible:  "+name+" ("+fz.Editor+") "+fz.Stuff+'     <a href="'+fz.URL+'">'+name+"</a>"
-            htm='<i><a href="'+fz.URL+'">'+name+'</a></i>&nbsp;&nbsp;<font color="#FF0000">(Eligible)</font>&nbsp;&nbsp;'+" ("+fz.Editor+") <br>"+FormatStuff(fz)
+            htm='<i><a href="'+fz.URL+'">'+name+'</a></i>&nbsp;&nbsp;<font color="#FF0000">(Eligible)</font>&nbsp;&nbsp;'+" ("+fz.Editor+") <br>"+FanacOrgReaders.FormatStuff(fz)
         elif name != None and fz.URL == None:
             # We're missing a URL for an eligible zine
             txt="Eligible:  "+name+" ("+fz.Editor+") "+fz.Stuff
-            htm='<i>'+name+"</i>"+'&nbsp;&nbsp;<font color="#FF0000">(Eligible)</font>&nbsp;&nbsp; ('+fz.Editor+") <br>"+FormatStuff(fz)
+            htm='<i>'+name+"</i>"+'&nbsp;&nbsp;<font color="#FF0000">(Eligible)</font>&nbsp;&nbsp; ('+fz.Editor+") <br>"+FanacOrgReaders.FormatStuff(fz)
         else:
             # We're missing all information from fanac.org for an eligible fanzine -- it isn't there
             txt=name+" ("+fz.Editor+") "+fz.Stuff
-            htm='<i>'+fz.Name+'</i>&nbsp;&nbsp;<font color="#FF0000">(Eligible)</font>&nbsp;&nbsp; ('+fz.Editor+") <br>"+FormatStuff(fz)
+            htm='<i>'+fz.Name+'</i>&nbsp;&nbsp;<font color="#FF0000">(Eligible)</font>&nbsp;&nbsp; ('+fz.Editor+") <br>"+FanacOrgReaders.FormatStuff(fz)
     else:
         if fz.Name != None and fz.URL != None:
             # We have full information for an ineligible zine
             txt=fz.Name+" ("+fz.Editor+") "+fz.Stuff+'     <a href="'+fz.URL+'">'+fz.Name+"</a>"
-            htm='<i><a href="'+fz.URL+'">'+fz.Name+"</a></i>"+" ("+fz.Editor+") <br>"+FormatStuff(fz)
+            htm='<i><a href="'+fz.URL+'">'+fz.Name+"</a></i>"+" ("+fz.Editor+") <br>"+FanacOrgReaders.FormatStuff(fz)
         elif fz.Name != None and fz.URL == None:
             # We're missing a URL for an ineligible item
             txt=fz.Name+" ("+fz.Editor+") "+fz.Stuff
-            htm='<i>'+fz.Name+"</a></i>"+" ("+fz.Editor+") <br>"+FormatStuff(fz)
+            htm='<i>'+fz.Name+"</a></i>"+" ("+fz.Editor+") <br>"+FanacOrgReaders.FormatStuff(fz)
         else:
             # We're missing all information from fanac.org for an ineligible fanzine -- it isn't there
             txt=fz.Name+" ("+fz.Editor+") "+fz.Stuff
-            htm='<i>'+fz.Name+"</i> ("+fz.Editor+") <br>"+FormatStuff(fz)
+            htm='<i>'+fz.Name+"</i> ("+fz.Editor+") <br>"+FanacOrgReaders.FormatStuff(fz)
     linecount=linecount+1
     if linecount == len(allFanzines1942)/2:
         f.write('</td>\n<td valign="top" align="left">\n<ul>')

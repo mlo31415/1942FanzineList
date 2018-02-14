@@ -146,3 +146,21 @@ def LookForTable(tag):
     return None
 
 
+#==================================================================================
+# Return a properly formatted link
+def FormatLink(name, url):
+    return '<a href='+url+'>'+name+'</a>'
+
+
+#==================================================================================
+# Compare a filename, volume and number woith a second set
+def CompareIssueSpec(name1, vol1, num1, name2, vol2, num2):
+    if name1.lower() != name2.lower():
+        return False
+    if (vol1 == None and vol2 != None) or (vol1 != None and vol2 == None):
+        return False
+    if vol1 != vol2:
+        return False
+    if num1 != num2:
+        return False
+    return True

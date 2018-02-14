@@ -1,7 +1,3 @@
-import os
-from bs4 import NavigableString
-from bs4 import BeautifulSoup
-import requests
 import collections
 
 # This is a tuple which associates all the different forms of a fanzine's name on fanac.org.
@@ -47,13 +43,12 @@ def AddRetroName(name):
 
     # Now we check to see if a matching name is in it that has a blank RetroName.
     for i in range(0, len(fanacNameTuples)):
-        ft=fanacNameTuples[i]
-        if CompareNames(ft.FanacStandardName, name):
-            fanacNameTuples[i]=FanacName(ft[0], ft[1], ft[2], ft[3], name)
+        if CompareNames(fanacNameTuples[i].FanacStandardName, name):
+            fanacNameTuples[i]._replace(RetroName=name)
             return
 
     # Nothing. So the last recoruse is simply to add a new tuple.
-    fanacNameTuples.append(FanacName(None, None, None, None, name))
+    fanacNameTuples.append(FanacName(FanacDirName=None, JoesName=None, FanacStandardName=None, DisplayName=None, RetroName=name))
     return
 
 
@@ -76,10 +71,6 @@ def LocateFanacStandardName(name):
 
 
 #=======================================================================
-def UpdateJoesName(i, jname):
-    nt=fanacNameTuples[i]
-    fanacNameTuples[i]=FanacName(nt.FanacDirName, jname, nt.DisplayName, nt.FanacStandardName, nt.RetroName)
-#=======================================================================
 def AddJoesName(jname):
     # Joe's name may have case oddities or may be reversed ("xxx, The" rather than "The xxx") or something
     # Add Joe's name to the master list.
@@ -87,31 +78,30 @@ def AddJoesName(jname):
 
     i=ExistsFanacStandardName(jname)
     if i != None:
-        UpdateJoesName(i, jname)
+        fanacNameTuples[i]._replace(JoesName=jname)
         return
 
     # Try moving a leading "The " to the end
     if jname.lower.startswith("the "):
         i=ExistsFanacStandardName(jname[4:]+", The")
         if i != None:
-            UpdateJoesName(i, jname)
+            fanacNameTuples[i]._replace(JoesName=jname)
             return
 
     # Try adding a trailing ", the" since sometimes Joe's list omits this
     i=ExistsFanacStandardName(jname+", the")
     if i!= None:
-        UpdateJoesName(i, jname)
+        fanacNameTuples[i]._replace(JoesName=jname)
         return
 
     # If none of this works, add a new entry
     # Deal with a potential leading "The "
     if jname.lower.startswith("the "):
-        fanacNameTuples.append(FanacName(None, jname, None, jname+", The", None))
+        fanacNameTuples.append(FanacName(FanacDirName=None, JoesName=jname, DisplayName=None, FanacStandardName=jname+", The", RetroName=None))
         return
 
     # Just add it as-is
-    fanacNameTuples.append(FanacName(None, jname, None, jname, None))
-    return
+    fanacNameTuples.append(FanacName(FanacDirName=None, JoesName=jname, DisplayName=None, FanacStandardName=jname, RetroName=None))
 
 
 #======================================================================
@@ -126,7 +116,7 @@ def AddFanzineStandardName(name):
         if t.FanacStandardName == name:
            return fanacNameTuples
 
-    fanacNameTuples.append(FanacName(None, None, None, name, None))
+    fanacNameTuples.append(FanacName(FanacDirName=None, JoesName=None, DisplayName=None, FanacStandardName=name, RetroName=None))
     return
 
 
@@ -150,7 +140,7 @@ def AddFanacNameDirname(name, dirname):
 
     # Add name and directory reference
     print("   added: name="+name+"  dirname="+dirname)
-    fanacNameTuples.append(FanacName(dirname, None, None, name, None))
+    fanacNameTuples.append(FanacName(FanacDirName=dirname, JoesName=None, DisplayName=None, FanacStandardName=name, RetroName=None))
     return
 
 
@@ -204,6 +194,9 @@ def StandardizeName(name):
 #==========================================================================
 # Convert a name to standard by lookup
 def DirName(name):
+
+    if name == None:
+        return None
 
     # First handle the location of the "The"
     if name[0:3] == "The ":

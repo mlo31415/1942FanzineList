@@ -5,6 +5,9 @@ import Helpers
 import FanacNames
 import re
 
+global fanacFanzineDirectoryFormats
+fanacFanzineDirectoryFormats=None
+
 FanacName=collections.namedtuple("FanacName", "FanacDirName, JoesName, DisplayName, FanacIndexName, RetroName")
 
 #====================================================================================
@@ -82,7 +85,7 @@ def ReadFanacOrgFormatsTxt():
 
 # ============================================================================================
 # Function to extract information from a fanac.org fanzine index.html page
-def ReadFanacFanzineIndexPage(fanzineName, directoryUrl, format, fanzineIssueList):
+def ReadAndAppendFanacFanzineIndexPage(fanzineName, directoryUrl, format, fanzineIssueList):
     FanacIssueInfo=collections.namedtuple("FanacIssueInfo", "FanzineName, IssueName, Vol, Number, URL")
 
     # Download the index.html which lists all of the issues of the specified currently on the site
@@ -135,33 +138,130 @@ def ReadFanacFanzineIndexPage(fanzineName, directoryUrl, format, fanzineIssueLis
     rows=[]
     for i in range(1, len(tab)):
         tableRow=Helpers.RemoveNewlineRows(tab.contents[i])
-        row=[]      # Row: fanzinename, url, year, vol, num
+        FanzineInfo=collections.namedtuple("FanzineInfo", "Name, URL, Year, Vol, Num")
 
         # Now for code which depends on the index,html file format
         if format[0] == 0 and format[1] == 0:   # The default case
 
-            row=(*Helpers.GetHrefAndTextFromTag(tableRow[issueCol]), tableRow[yearCol].string, None, None)    # (We ignore the Vol and Num for now.)
+            temp=Helpers.GetHrefAndTextFromTag(tableRow[issueCol])
+            row=FanzineInfo(Name=temp[0], URL=temp[1], Year=tableRow[yearCol].string, Vol=None, Num=None)    # (We ignore the Vol and Num for now.)
             # Get the num from the name
             rows.append(row)
 
-        elif format[0] == 1 and (format[1] == 6 or format[1] == 7): # The name in the title colum ends in V<n>, #<n>
+        elif format[0] == 1 and (format[1] == 6 or format[1] == 7): # The name in the title column ends in V<n>, #<n>
 
             # We need two things: The contents of the first (linking) column and the year.
             name, href=Helpers.GetHrefAndTextFromTag(tableRow[issueCol])
             p=re.compile("(.*)V([0-9]+),?\s*#([0-9]+)\s*$")
             m=p.match(name)
             if m.groups == 3:
-                row=(fanzineName, href, tableRow[yearCol].string, int(m.groups[1]), int(m.groups[2]))
-
+                row=FanzineInfo(Name=fanzineName, URL=href, Year=tableRow[yearCol].string, Vol=int(m.groups[1]), Num=int(m.groups[2]))
+                row.append(row)
 
 
 #     FanacIssueInfo=collections.namedtuple("FanacIssueInfo", "FanzineName, IssueName, Vol, Number, URL")
 
     # Now select just the fanzines for 1942 and append them to the fanzineIssueList
     for row in rows:
-        if row[2] == "1942":
-            print(row[0])
-            issue=FanacIssueInfo(fanzineName, row[0], row[2], row[3], row[1])
+        if row.Year == "1942":
+            print(str(row))
+            issue=FanacIssueInfo(FanzineName=fanzineName, URL=row.URL, Number=row.Num, Vol=row.Vol, IssueName=None)
+            print("ReadAndAppendFanacFanzineIndexPage: appending "+str(issue))
             fanzineIssueList.append(issue)
 
     return fanzineIssueList
+
+
+# ============================================================================================
+def ReadFanacFanzineIssues(fanzinesList):
+    # Read index.html files on fanac.org
+    # We have a dictionary containing the names and URLs of the 1942 fanzines.
+    # The next step is to figure out what 1942 issues of each we have on the website
+    # We do this by reading the fanzines/<name>/index.html file and then decoding the table in it.
+    # What we get out of this is a list of fanzines with name, URL, and issue info.
+    # Loop over the list of all 1942 fanzines, building up a list of those on fanac.org
+    print("----Begin reading index.html files on fanac.org")
+
+    global fanacFanzineDirectoryFormats
+    if fanacFanzineDirectoryFormats == None:
+        fanacFanzineDirectoryFormats=ReadFanacOrgFormatsTxt()
+
+    global fanacIssueInfo
+    fanacIssueInfo=[]
+    for (key, (title, relPath)) in fanzinesList.items():
+
+        # Get the index file format for this directory
+        try:
+            dn=FanacNames.DirName(title.lower())
+            fmt=fanacFanzineDirectoryFormats[dn.lower()]
+            print("   Format: "+title+" --> "+FanacNames.StandardizeName(title.lower())+" --> "+str(fmt))
+        except:
+            print("   Format: "+title+" --> "+FanacNames.StandardizeName(title.lower())+" -->  (0, 0)")
+            # This is actually a good thing, because it means that the fanzines has the default index.html type
+            print("   fanacFanzineDirectoryFormats["+title.lower()+"] not found")
+            # The URL we get is relative to the fanzines directory which has the URL fanac.org/fanzines
+            # We need to turn relPath into a URL
+            url=Helpers.RelPathToURL(relPath)
+            print(title, " ", url)
+            ret=ReadAndAppendFanacFanzineIndexPage(title, url, (0, 0, None), fanacIssueInfo)
+            if ret!=None:
+                fanacIssueInfo=ret
+            continue
+
+        # The URL we get is relative to the fanzines directory which has the URL fanac.org/fanzines
+        # We need to turn relPath into a URL
+        url=Helpers.RelPathToURL(relPath)
+        print(title, " ", url)
+        ret=ReadAndAppendFanacFanzineIndexPage(title, url, fmt, fanacIssueInfo)
+        if ret!=None:
+            fanacIssueInfo=ret
+
+    # Now we have a list of all the issues of fanzines onfanac.org which have at least one 1942 issue.(Not all of the issues are 1942.)
+    print("----Done reading index.html files on fanac.org")
+    return
+
+
+#================================================================================================
+# Inline function to format Stuff, which is a list of IssueSpecs
+# Stuff is commonly a list of issue specification interspersed with nonce items
+# For now, we'll attempt only to format what we interpret, above: whole numbers and Vol/# combinations
+def FormatStuff(fz):
+    ex=fz.Issues
+    if ex == None or len(ex) == 0:
+        return fz.Stuff
+    out=""
+    for issue in ex:
+        # issue is a tuple of a vol and a num.
+        # If both exists, it is a Vn#n pair
+        # If V is none, then num is a whole number.
+        # Neither existing should never happen
+        if issue.Vol == None and issue.Num == None:
+            v="(oops) "+ fz.Stuff
+
+        elif issue.Vol == None:
+            # We have a fanzine name, and Vol/Num information.
+            # First look up the fanzine to see if it is on fanac.org. The look up the Vol/Issue to see if it is there.
+            dirname=FanacNames.DirName(fz.NameOnFanac)
+            if dirname == None:
+                continue
+            url=None
+            text=None
+            if dirname.startswith("dirname"):
+                url="Oops"
+                v="Oops"
+            else:
+                for fii in fanacIssueInfo:
+                    if Helpers.CompareIssueSpec(fii.FanzineName, fii.Vol, fii.Number, dirname, issue.Vol, issue.Num):
+                        url=fii.URL
+                        text=str(issue.Num)
+                if url != None:
+                    v=Helpers.FormatLink(str(issue.Num), url)
+                else:
+                    v="#"+str(issue.Num)
+        else:
+            v="V"+str(issue.Vol)+"#"+str(issue.Num)
+
+        if len(out) > 0:
+            out=out+", "
+        out=out+v
+    return out

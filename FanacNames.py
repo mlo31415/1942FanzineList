@@ -2,12 +2,11 @@ import collections
 
 # This is a tuple which associates all the different forms of a fanzine's name on fanac.org.
 # It does *not* try to deal with namechanges!
-#   FanacDirName is the name of the directory under fanac.org/fanzines
 #   JoeName is the name used by Joe in his database (e.g., 1942fanzines.pdf on fanac.org)
 #   DisplayName is the name we prefer to use for people-readable materials
 #   FanacStandardName is the human-readable name used in the big indexes under modern and classic fanzines
 #   RetroNsame is the named used in the Retro_Hugos.html file on fanac.org
-FanacName=collections.namedtuple("FanacName", "FanacDirName, JoesName, DisplayName, FanacStandardName, RetroName")
+FanacName=collections.namedtuple("FanacName", "JoesName, DisplayName, FanacStandardName, RetroName")
 
 global fanacNameTuples  # Holds all the accumulated name tuples
 fanacNameTuples=[]
@@ -48,7 +47,7 @@ def AddRetroName(name):
             return
 
     # Nothing. So the last recoruse is simply to add a new tuple.
-    fanacNameTuples.append(FanacName(FanacDirName=None, JoesName=None, FanacStandardName=None, DisplayName=None, RetroName=name))
+    fanacNameTuples.append(FanacName(JoesName=None, FanacStandardName=None, DisplayName=None, RetroName=name))
     return
 
 
@@ -66,7 +65,7 @@ def AddFanacDirectories(fanacDirs):
         return
 
     for name, dir in fanacDirs.items():
-        fanacNameTuples.append(FanacName(FanacDirName=dir, JoesName=None, DisplayName=None, FanacStandardName=name, RetroName=None))
+        fanacNameTuples.append(FanacName(JoesName=None, DisplayName=None, FanacStandardName=name, RetroName=None))
 
     return
 
@@ -116,11 +115,11 @@ def AddJoesName(jname):
     # If none of this works, add a new entry
     # Deal with a potential leading "The "
     if jname.lower.startswith("the "):
-        fanacNameTuples.append(FanacName(FanacDirName=None, JoesName=jname, DisplayName=None, FanacStandardName=jname+", The", RetroName=None))
+        fanacNameTuples.append(FanacName(JoesName=jname, DisplayName=None, FanacStandardName=jname+", The", RetroName=None))
         return
 
     # Just add it as-is
-    fanacNameTuples.append(FanacName(FanacDirName=None, JoesName=jname, DisplayName=None, FanacStandardName=jname, RetroName=None))
+    fanacNameTuples.append(FanacName(JoesName=jname, DisplayName=None, FanacStandardName=jname, RetroName=None))
 
 
 #======================================================================
@@ -135,7 +134,7 @@ def AddFanzineStandardName(name):
         if t.FanacStandardName == name:
            return fanacNameTuples
 
-    fanacNameTuples.append(FanacName(FanacDirName=None, JoesName=None, DisplayName=None, FanacStandardName=name, RetroName=None))
+    fanacNameTuples.append(FanacName(JoesName=None, DisplayName=None, FanacStandardName=name, RetroName=None))
     return
 
 
@@ -157,13 +156,6 @@ def StandardizeName(name):
     # Now check other forms.
     for nt in fanacNameTuples:
         if nt.RetroName != None and nt.RetroName.lower() == lname:
-            if nt.FanacStandardName != None:
-                return nt.FanacStandardName
-            else:
-                return "StandardizeName("+name+") failed"
-
-    for nt in fanacNameTuples:
-        if nt.FanacDirName != None and nt.FanacDirName.lower() == lname:
             if nt.FanacStandardName != None:
                 return nt.FanacStandardName
             else:

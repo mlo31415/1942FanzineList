@@ -7,10 +7,12 @@ import FanacOrgReaders
 import RetroHugoReaders
 
 # Create the list of FanacName tuples which will be used by FanacName functions
+# Note: This is just to get the names and directories, nothing else.
 FanacOrgReaders.ReadClassicModernPages()
+FanacNames.AddFanacDirectories(FanacOrgReaders.fanacDirectories)
 
 # Read Joe's PDF and create a list of tuples, each representing one of the complete set of fanzines of 1942
-# The three items of the tuple is the fanzine name, the fanzine editors, andf the fanzine issue data.
+# The three items of the tuple are the fanzine name, the fanzine editors, andf the fanzine issue data.
 # Some of this is pretty rough, being taken from somewhat inconsistant text in the PDF.
 # This will also add any new names found to the FanacNames tuples
 allFanzines1942=RetroHugoReaders.Read1942FanzineList()

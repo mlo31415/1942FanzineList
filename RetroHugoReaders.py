@@ -47,7 +47,7 @@ def Read1942FanzineList():
 
 
 #=================================================================================
-# Download the fanac.org webpage which lists all of the 1942 fanzine issues currently on the site
+# Download the fanac.org Retro Hugos webpage which lists all of the 1942 fanzine issues currently on the site
 def ReadRetro_HugosTxtFile():
 
     print("----Begin reading Retro_Hugos.html file")

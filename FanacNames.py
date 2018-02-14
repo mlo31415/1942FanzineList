@@ -52,6 +52,25 @@ def AddRetroName(name):
     return
 
 
+#========================================================
+# Add the fanac directory dictionary to the names list
+#
+def AddFanacDirectories(fanacDirs):
+    if fanacDirs == None or len(fanacDirs) == 0:
+        print("***AddFanacDirectories tried to add an empty FanacOrgReaders.fanacDirectories")
+        return
+
+    # This is being done to initialize fanacNameTuples, so make sure it';s empty
+    if fanacNameTuples != None and len(fanacNameTuples) > 0:
+        print("***AddFanacDirectories tried to initialize an non-empty fanacNameTuples")
+        return
+
+    for name, dir in fanacDirs.items():
+        fanacNameTuples.append(FanacName(FanacDirName=dir, JoesName=None, DisplayName=None, FanacStandardName=name, RetroName=None))
+
+    return
+
+
 #=====================================================================
 # This checks for an exact match of the Fanac Standard name
 def ExistsFanacStandardName(name):
@@ -120,30 +139,6 @@ def AddFanzineStandardName(name):
     return
 
 
-#======================================================================
-# We have a name and a dirname from the fanac.org Classic and Modern pages.
-# The dirname *might* be a URL in which case it needs to be handled as a foreign directory reference
-def AddFanacNameDirname(name, dirname):
-    isDup=False
-
-    if ExistsFanacStandardName(name):
-        print("   duplicate: name="+name+"  dirname="+dirname)
-        isDup=True
-
-    if dirname[:3]=="http":
-        if isDup:
-            print("      ignored, because is HTML")
-            return
-
-        AddFanzineStandardName(name)      # Just add the name
-        return
-
-    # Add name and directory reference
-    print("   added: name="+name+"  dirname="+dirname)
-    fanacNameTuples.append(FanacName(FanacDirName=dirname, JoesName=None, DisplayName=None, FanacStandardName=name, RetroName=None))
-    return
-
-
 #==========================================================================
 # Convert a name to standard by lookup
 def StandardizeName(name):
@@ -188,53 +183,3 @@ def StandardizeName(name):
             else:
                 return "StandardizeName("+name+") failed"
     return "StandardizeName("+name+") failed"
-
-
-
-#==========================================================================
-# Convert a name to standard by lookup
-def DirName(name):
-
-    if name == None:
-        return None
-
-    # First handle the location of the "The"
-    if name[0:3] == "The ":
-        name=name[4:]+", The"
-
-    lname=name.lower()
-
-    # First see if it is in the list of standard names
-    for nt in fanacNameTuples:
-        if nt.FanacStandardName != None and nt.FanacStandardName.lower() == lname:
-            return nt.FanacDirName
-
-    # Now check other forms.
-    for nt in fanacNameTuples:
-        if nt.RetroName != None and nt.RetroName.lower() == lname:
-            if nt.FanacStandardName != None:
-                return nt.FanacDirName
-            else:
-                return "DirName("+name+") failed"
-
-    for nt in fanacNameTuples:
-        if nt.FanacDirName != None and nt.FanacDirName.lower() == lname:
-            if nt.FanacStandardName != None:
-                return nt.FanacDirName
-            else:
-                return "DirName("+name+") failed"
-
-    for nt in fanacNameTuples:
-        if nt.JoesName != None and nt.JoesName.lower() == lname:
-            if nt.FanacStandardName != None:
-                return nt.FanacDirName
-            else:
-                return "DirName("+name+") failed"
-
-    for nt in fanacNameTuples:
-        if nt.DisplayName != None and nt.DisplayName.lower() == lname:
-            if nt.FanacStandardName != None:
-                return nt.FanacDirName
-            else:
-                return "DirName("+name+") failed"
-    return "DirName("+name+") failed"

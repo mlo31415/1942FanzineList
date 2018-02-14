@@ -8,7 +8,12 @@ import re
 global fanacFanzineDirectoryFormats
 fanacFanzineDirectoryFormats=None
 
+# This is a dictionary of all fanzines on fanac.org. The key is the fanzines name, the value is the directory name
+global fanacDirectories
+fanacDirectories={}
+
 FanacName=collections.namedtuple("FanacName", "FanacDirName, JoesName, DisplayName, FanacIndexName, RetroName")
+FanacDirectories=collections.namedtuple("FanacDirectories", "Name, Dir")
 
 #====================================================================================
 # Read fanac.org/fanzines/Classic_Fanzines.html amd /Modern_Fanzines.html
@@ -28,6 +33,7 @@ def ReadClassicModernPages():
     return
 
 
+#======================================================================
 def ReadModernOrClassicTable(url):
     h=requests.get(url)
     s=BeautifulSoup(h.content, "html.parser")
@@ -41,7 +47,27 @@ def ReadModernOrClassicTable(url):
                 # Now the data rows
                 name=trs[i].find_all("td")[1].contents[0].contents[0].contents[0]
                 dirname=trs[i].find_all("td")[1].contents[0].attrs["href"][:-1]
-                FanacNames.AddFanacNameDirname(name, dirname)
+                AddFanacNameDirname(name, dirname)
+    return
+
+
+#======================================================================
+# We have a name and a dirname from the fanac.org Classic and Modern pages.
+# The dirname *might* be a URL in which case it needs to be handled as a foreign directory reference
+def AddFanacNameDirname(name, dirname):
+    isDup=False
+
+    if name in fanacDirectories:
+        print("   duplicate: name="+name+"  dirname="+dirname)
+        return
+
+    if dirname[:3]=="http":
+        print("    ignored, because is HTML: "+dirname)
+        return
+
+    # Add name and directory reference
+    print("   added to fanacDirectories: name='"+name+"'  dirname='"+dirname+"'")
+    fanacDirectories[name]=dirname
     return
 
 
@@ -265,3 +291,4 @@ def FormatStuff(fz):
             out=out+", "
         out=out+v
     return out
+

@@ -245,7 +245,7 @@ def ReadAndAppendFanacFanzineIndexPage(fanzineName, directoryUrl, format, fanzin
         if row.Year == "1942":
             print(str(row))
             issue=FanacIssueInfo(FanzineName=fanzineName, URL=row.URL, Number=row.Num, Vol=row.Vol, IssueName=None)
-            print("ReadAndAppendFanacFanzineIndexPage: appending "+str(issue))
+            print("1942: ReadAndAppendFanacFanzineIndexPage: appending "+str(issue))
             fanzineIssueList.append(issue)
 
     return fanzineIssueList
@@ -357,7 +357,7 @@ def FormatStuff(fz):
                 url="Oops"
                 v="Oops"
             else:
-                for fii in fanacIssueInfo:
+                for fii in g_fanacIssueInfo:
                     if Helpers.CompareIssueSpec(fii.FanzineName, fii.Vol, fii.Number, dirname, issue.Vol, issue.Num):
                         url=fii.URL
                         text=str(issue.Num)

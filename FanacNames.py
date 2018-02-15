@@ -55,7 +55,7 @@ def AddRetroName(name):
 # Add the fanac directory dictionary to the names list
 #
 def AddFanacDirectories(fanacDirs):
-    if fanacDirs == None or len(fanacDirs) == 0:
+    if fanacDirs == None or fanacDirs.len == 0:
         print("***AddFanacDirectories tried to add an empty FanacOrgReaders.fanacDirectories")
         return
 
@@ -64,7 +64,7 @@ def AddFanacDirectories(fanacDirs):
         print("***AddFanacDirectories tried to initialize an non-empty fanacNameTuples")
         return
 
-    for name, dir in fanacDirs.items():
+    for name, dir in fanacDirs.Dict().items():
         fanacNameTuples.append(FanacName(JoesName=None, DisplayName=None, FanacStandardName=name, RetroName=None))
 
     return
@@ -94,27 +94,27 @@ def AddJoesName(jname):
     # Add Joe's name to the master list.
     # It will either match an existing entry or create a new entry
 
-    i=ExistsFanacStandardName(jname)
+    i=LocateFanacStandardName(jname)
     if i != None:
         fanacNameTuples[i]._replace(JoesName=jname)
         return
 
     # Try moving a leading "The " to the end
-    if jname.lower.startswith("the "):
-        i=ExistsFanacStandardName(jname[4:]+", The")
+    if jname.lower().startswith("the "):
+        i=LocateFanacStandardName(jname[4:]+", The")
         if i != None:
             fanacNameTuples[i]._replace(JoesName=jname)
             return
 
     # Try adding a trailing ", the" since sometimes Joe's list omits this
-    i=ExistsFanacStandardName(jname+", the")
+    i=LocateFanacStandardName(jname+", the")
     if i!= None:
         fanacNameTuples[i]._replace(JoesName=jname)
         return
 
     # If none of this works, add a new entry
     # Deal with a potential leading "The "
-    if jname.lower.startswith("the "):
+    if jname.lower().startswith("the "):
         fanacNameTuples.append(FanacName(JoesName=jname, DisplayName=None, FanacStandardName=jname+", The", RetroName=None))
         return
 

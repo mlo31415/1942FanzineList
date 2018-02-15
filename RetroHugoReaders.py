@@ -46,42 +46,6 @@ def Read1942FanzineList():
     return allFanzines1942
 
 
-#=================================================================================
-# Download the fanac.org Retro Hugos webpage which lists all of the 1942 fanzine issues currently on the site
-def ReadRetro_HugosTxtFile():
-
-    print("----Begin reading Retro_Hugos.html file")
-    h=requests.get("http://www.fanac.org/fanzines/Retro_Hugos.html")
-    s=BeautifulSoup(h.content, "html.parser")
-    table=s.body.ol.contents
-    # The structure of the table is
-    #       A string "\n"
-    #       A <li> tag containing the editor's name
-    #       A <ul> tag containing one or more lines of fanzines
-    #       A <br/> tag
-    # All we care about is the <ul> tag, which we need to decode to find individual fanzines.
-    # Loop over the tags to find entries
-    listOf1942FanzinesOnFanac=dict()  # This is a dictionary with the fanzine name as the key and values of linktext and URL
-    for tag in table:
-        if tag.name!="ul":
-            continue
-        line=tag.contents
-
-        # The line is a list of tags and strings. Ignore the strings
-        for tag2 in line:
-            if tag2.string!=None:
-                continue
-
-            # Now we have a single fanzine entry. It has the format <li><a...></li>. We want the <a...> part
-            # This is the first member of the tag's contents list.
-            a=tag2.contents[0]
-            hrefLinkText, hrefUrl=Helpers.GetHrefAndTextFromTag(a)
-            listOf1942FanzinesOnFanac[hrefLinkText.lower()]=(hrefLinkText, hrefUrl)
-            FanacNames.AddRetroName(hrefLinkText)
-
-    print("----Done reading Retro_Hugos.html file")
-    return listOf1942FanzinesOnFanac
-
 #============================================================================================
 def ReadLinks1942Txt():
     print("----Begin reading Links1942.txt")

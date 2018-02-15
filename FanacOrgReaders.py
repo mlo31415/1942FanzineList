@@ -5,15 +5,67 @@ import Helpers
 import FanacNames
 import re
 
-global fanacFanzineDirectoryFormats
-fanacFanzineDirectoryFormats=None
+global g_FanacFanzineDirectoryFormats
+g_FanacFanzineDirectoryFormats=None
 
-# This is a dictionary of all fanzines on fanac.org. The key is the fanzines name, the value is the directory name
-global fanacDirectories
-fanacDirectories={}
+# # This is a dictionary of all fanzines on fanac.org. The key is the fanzines name, the value is the directory name
+# global fanacDirectories
+# fanacDirectories={}
 
 FanacName=collections.namedtuple("FanacName", "FanacDirName, JoesName, DisplayName, FanacIndexName, RetroName")
-FanacDirectories=collections.namedtuple("FanacDirectories", "Name, Dir")
+
+class FanacDirectories:
+
+    def __init__(self):
+        self.directories={}
+        self.index=0
+
+    # ======================================================================
+    # We have a name and a dirname from the fanac.org Classic and Modern pages.
+    # The dirname *might* be a URL in which case it needs to be handled as a foreign directory reference
+    def AddDirectory(self, name, dirname):
+        isDup=False
+
+        name=name.lower()
+
+        if name in self.directories:
+            print("   duplicate: name="+name+"  dirname="+dirname)
+            return
+
+        if dirname[:3]=="http":
+            print("    ignored, because is HTML: "+dirname)
+            return
+
+        # Add name and directory reference
+        print("   added to fanacDirectories: name='"+name+"'  dirname='"+dirname+"'")
+        self.directories[name]=dirname
+        return
+
+    def Dict(self):
+        return self.directories
+
+    def Contains(self, name):
+        return name in self.directories
+
+    def GetTuple(self, name):
+        return (name, self.directories[name])
+
+    def len(self):
+        return len(self.directories)
+
+    # def __iter__(self):
+    #     return self
+    #
+    # def __next__(self):
+    #     if self.index == len(self.directories):
+    #         raise StopIteration
+    #     self.index = self.index + 1
+    #     return self.directories.items()[self.index]
+
+# End of class FanacDirectories:
+#==========================================================
+
+g_FanacDirectories=FanacDirectories()
 
 #====================================================================================
 # Read fanac.org/fanzines/Classic_Fanzines.html amd /Modern_Fanzines.html
@@ -47,27 +99,7 @@ def ReadModernOrClassicTable(url):
                 # Now the data rows
                 name=trs[i].find_all("td")[1].contents[0].contents[0].contents[0]
                 dirname=trs[i].find_all("td")[1].contents[0].attrs["href"][:-1]
-                AddFanacNameDirname(name, dirname)
-    return
-
-
-#======================================================================
-# We have a name and a dirname from the fanac.org Classic and Modern pages.
-# The dirname *might* be a URL in which case it needs to be handled as a foreign directory reference
-def AddFanacNameDirname(name, dirname):
-    isDup=False
-
-    if name in fanacDirectories:
-        print("   duplicate: name="+name+"  dirname="+dirname)
-        return
-
-    if dirname[:3]=="http":
-        print("    ignored, because is HTML: "+dirname)
-        return
-
-    # Add name and directory reference
-    print("   added to fanacDirectories: name='"+name+"'  dirname='"+dirname+"'")
-    fanacDirectories[name]=dirname
+                g_FanacDirectories.AddDirectory(name, dirname)
     return
 
 
@@ -95,7 +127,7 @@ def ReadFanacOrgFormatsTxt():
         line=line.strip()  # Make sure there are no leading or traling blanks
         if len(line)==0 or line[0]=="#":  # Ignore some lines
             continue
-        # We apparently have a data line. Split it into tokens. Remove leading and traling blanks, but not internal blanks.
+        # We apparently have a data line. Split it into tokens. Remove leading and trailing blanks, but not internal blanks.
         spl=line.split(",")
         if len(spl)<3:  # There has to be at least three tokens (the two numbers and at least one directory name)
             print("***Something's wrong with "+line)
@@ -112,10 +144,28 @@ def ReadFanacOrgFormatsTxt():
 # ============================================================================================
 # Function to extract information from a fanac.org fanzine index.html page
 def ReadAndAppendFanacFanzineIndexPage(fanzineName, directoryUrl, format, fanzineIssueList):
+    skippers=["Emu Tracks Over America", "Flight of the Kangaroo, The", "Enchanted Duplicator, The", "Tails of Fandom", "BNF of IZ", "NEOSFS Newsletter, Issue 3, The"]
+    if fanzineName in skippers:
+        print("   Skipping: "+fanzineName)
+        return fanzineIssueList
+
     FanacIssueInfo=collections.namedtuple("FanacIssueInfo", "FanzineName, IssueName, Vol, Number, URL")
 
-    # Download the index.html which lists all of the issues of the specified currently on the site
-    h = requests.get(directoryUrl)
+    # We're only prepared to read a few formats.  Skip over the others right now.
+    OKFormats=((0,0,None), (1,6,None), (1,7,None))
+    if not format in OKFormats:
+        print("   Can't handle format:"+str(format) +" from "+directoryUrl)
+        return None
+
+    # Download the index.html which lists all of the issues of the specified fanzine currently on the site
+    try:
+        h = requests.get(directoryUrl)
+    except:
+        try:
+            h=requests.get(directoryUrl)
+        except:
+            print("***Request failed for: "+directoryUrl)
+            return None
 
     s = BeautifulSoup(h.content, "html.parser")
     b = s.body.contents
@@ -180,9 +230,9 @@ def ReadAndAppendFanacFanzineIndexPage(fanzineName, directoryUrl, format, fanzin
             name, href=Helpers.GetHrefAndTextFromTag(tableRow[issueCol])
             p=re.compile("(.*)V([0-9]+),?\s*#([0-9]+)\s*$")
             m=p.match(name)
-            if m.groups == 3:
-                row=FanzineInfo(Name=fanzineName, URL=href, Year=tableRow[yearCol].string, Vol=int(m.groups[1]), Num=int(m.groups[2]))
-                row.append(row)
+            if m != None and len(m.groups()) == 3:
+                row=FanzineInfo(Name=fanzineName, URL=href, Year=tableRow[yearCol].string, Vol=int(m.groups()[1]), Num=int(m.groups()[2]))
+                rows.append(row)
 
 
 #     FanacIssueInfo=collections.namedtuple("FanacIssueInfo", "FanzineName, IssueName, Vol, Number, URL")
@@ -208,39 +258,57 @@ def ReadFanacFanzineIssues(fanzinesList):
     # Loop over the list of all 1942 fanzines, building up a list of those on fanac.org
     print("----Begin reading index.html files on fanac.org")
 
-    global fanacFanzineDirectoryFormats
-    if fanacFanzineDirectoryFormats == None:
-        fanacFanzineDirectoryFormats=ReadFanacOrgFormatsTxt()
+    global g_FanacFanzineDirectoryFormats
+    if g_FanacFanzineDirectoryFormats == None:
+        g_FanacFanzineDirectoryFormats=ReadFanacOrgFormatsTxt()
 
     global fanacIssueInfo
     fanacIssueInfo=[]
-    for (key, (title, relPath)) in fanzinesList.items():
+    for title, dirname in fanzinesList.Dict().items():
 
         # Get the index file format for this directory
         try:
-            dn=FanacNames.DirName(title.lower())
-            fmt=fanacFanzineDirectoryFormats[dn.lower()]
+            dn=dirname.lower()
+            if '/' in dirname:
+                print("   skipped because of '/' in name:"+dirname)
+                continue
+            if not dn in g_FanacFanzineDirectoryFormats:
+                print("   Not in g_FanacFanzineDirectoryFormats:"+dirname)
+            fmt=g_FanacFanzineDirectoryFormats[dn]
             print("   Format: "+title+" --> "+FanacNames.StandardizeName(title.lower())+" --> "+str(fmt))
         except:
             print("   Format: "+title+" --> "+FanacNames.StandardizeName(title.lower())+" -->  (0, 0)")
             # This is actually a good thing, because it means that the fanzines has the default index.html type
             print("   fanacFanzineDirectoryFormats["+title.lower()+"] not found")
+
+            if '/' in dirname:
+                print("   skipped because of '/' in name:"+dirname)
+                continue
+
             # The URL we get is relative to the fanzines directory which has the URL fanac.org/fanzines
             # We need to turn relPath into a URL
-            url=Helpers.RelPathToURL(relPath)
+            url=Helpers.RelPathToURL(dirname)
             print(title, " ", url)
-            ret=ReadAndAppendFanacFanzineIndexPage(title, url, (0, 0, None), fanacIssueInfo)
-            if ret!=None:
-                fanacIssueInfo=ret
+            if url == None:
+                continue
+            if url.startswith("http://www.fanac.org") and not url.startswith("http://www.fanac.org//fan_funds") and not url.startswith("http://www.fanac.org/fanzines/Miscellaneous"):
+                ret=ReadAndAppendFanacFanzineIndexPage(title, url, (0, 0, None), fanacIssueInfo)
+                if ret!=None:
+                    fanacIssueInfo=ret
+            continue
+
+        if format == (8, 0):
+            print("   Skipped because no index.html file: "+ dirname)
             continue
 
         # The URL we get is relative to the fanzines directory which has the URL fanac.org/fanzines
         # We need to turn relPath into a URL
-        url=Helpers.RelPathToURL(relPath)
+        url=Helpers.RelPathToURL(dirname)
         print(title, " ", url)
-        ret=ReadAndAppendFanacFanzineIndexPage(title, url, fmt, fanacIssueInfo)
-        if ret!=None:
-            fanacIssueInfo=ret
+        if url.startswith("http://www.fanac.org") and not url.startswith("http://www.fanac.org//fan_funds"):
+            ret=ReadAndAppendFanacFanzineIndexPage(title, url, fmt, fanacIssueInfo)
+            if ret!=None:
+                fanacIssueInfo=ret
 
     # Now we have a list of all the issues of fanzines onfanac.org which have at least one 1942 issue.(Not all of the issues are 1942.)
     print("----Done reading index.html files on fanac.org")

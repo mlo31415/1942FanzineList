@@ -9,7 +9,7 @@ import RetroHugoReaders
 # Create the list of FanacName tuples which will be used by FanacName functions
 # Note: This is just to get the names and directories, nothing else.
 FanacOrgReaders.ReadClassicModernPages()
-FanacNames.AddFanacDirectories(FanacOrgReaders.fanacDirectories)
+FanacNames.AddFanacDirectories(FanacOrgReaders.g_FanacDirectories)
 
 # Read Joe's PDF and create a list of tuples, each representing one of the complete set of fanzines of 1942
 # The three items of the tuple are the fanzine name, the fanzine editors, andf the fanzine issue data.
@@ -17,15 +17,12 @@ FanacNames.AddFanacDirectories(FanacOrgReaders.fanacDirectories)
 # This will also add any new names found to the FanacNames tuples
 allFanzines1942=RetroHugoReaders.Read1942FanzineList()
 
-# A list of all 1942 fanzines with issue information
-listOf1942FanzinesOnFanac=RetroHugoReaders.ReadRetro_HugosTxtFile()
-
 # A dictionary of links of individual issues to external websites
 global externalLinks1942
 externalLinks1942=RetroHugoReaders.ReadLinks1942Txt()
 
 # Read the fanac.org fanzine direcgtory and produce a lost of all issues present
-FanacOrgReaders.ReadFanacFanzineIssues(listOf1942FanzinesOnFanac)
+FanacOrgReaders.ReadFanacFanzineIssues(FanacOrgReaders.g_FanacDirectories)
 
 
 #============================================================================================
@@ -53,13 +50,13 @@ for i in range(0, len(allFanzines1942)):
     # We want to look up the entries from Joe's list and see if they are on it.
     name=None
     url=None
-    if jname.lower() in listOf1942FanzinesOnFanac:
-        name, url=listOf1942FanzinesOnFanac[jname.lower()]
+    if FanacOrgReaders.g_FanacDirectories.Contains(jname.lower()):
+        name, url=FanacOrgReaders.g_FanacDirectories.GetTuple(jname.lower())
         print("   Found (1): "+name +" --> " + url)
     else:
         # Try adding a trailing ", the"since sometimes Joe's list omits this
-        if (jname.lower()+", the") in listOf1942FanzinesOnFanac:
-            name, url = listOf1942FanzinesOnFanac[jname.lower()+", the"]
+        if FanacOrgReaders.g_FanacDirectories.Contains(jname.lower()+", the"):
+            name, url = FanacOrgReaders.g_FanacDirectories.GetTuple(jname.lower()+", the")
             print("   Found (2): " + name + " --> " + url)
         else:
             print("   Not found: "+jname)
@@ -73,7 +70,7 @@ for i in range(0, len(allFanzines1942)):
                 print("   Found (3): " + name + " --> " + url)
                 break
             else:
-                # Try adding a trailing ", the"since sometimes Joe's list omits this
+                # Try adding a trailing ", the" since sometimes Joe's list omits this
                 if (jname.lower() + ", the") == ex.Title.lower():
                     name=ex.Title
                     url=ex.URL

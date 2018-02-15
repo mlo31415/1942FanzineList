@@ -39,9 +39,10 @@ def GetHrefAndTextFromTag(tag):
 def RelPathToURL(relPath):
     if relPath == None:
         return None
-    if relPath[0] == ".":
-        return "http://www.fanac.org/"+os.path.normpath(os.path.join("fanzines", relPath)).replace("\\", "/")
-    return relPath
+    if relPath.startswith("http"):  # We don't want to mess with foreign URLs
+        return None
+    return "http://www.fanac.org/"+os.path.normpath(os.path.join("fanzines", relPath)).replace("\\", "/")
+
 
 #-----------------------------------------
 # Simple function to name tags for debugging purposes

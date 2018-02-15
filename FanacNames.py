@@ -43,7 +43,7 @@ def AddRetroName(name):
     # Now we check to see if a matching name is in it that has a blank RetroName.
     for i in range(0, len(fanacNameTuples)):
         if CompareNames(fanacNameTuples[i].FanacStandardName, name):
-            fanacNameTuples[i]._replace(RetroName=name)
+            fanacNameTuples[i]=fanacNameTuples[i]._replace(RetroName=name)
             return
 
     # Nothing. So the last recoruse is simply to add a new tuple.
@@ -96,20 +96,20 @@ def AddJoesName(jname):
 
     i=LocateFanacStandardName(jname)
     if i != None:
-        fanacNameTuples[i]._replace(JoesName=jname)
+        fanacNameTuples[i]=fanacNameTuples[i]._replace(JoesName=jname)
         return
 
     # Try moving a leading "The " to the end
     if jname.lower().startswith("the "):
         i=LocateFanacStandardName(jname[4:]+", The")
         if i != None:
-            fanacNameTuples[i]._replace(JoesName=jname)
+            fanacNameTuples[i]=fanacNameTuples[i]._replace(JoesName=jname)
             return
 
     # Try adding a trailing ", the" since sometimes Joe's list omits this
     i=LocateFanacStandardName(jname+", the")
     if i!= None:
-        fanacNameTuples[i]._replace(JoesName=jname)
+        fanacNameTuples[i]=fanacNameTuples[i]._replace(JoesName=jname)
         return
 
     # If none of this works, add a new entry

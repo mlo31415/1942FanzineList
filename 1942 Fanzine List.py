@@ -126,7 +126,7 @@ for i in range(0, len(allFanzines1942)):
             listOfIssues.append(iss)
 
     if someGood:
-        allFanzines1942[i]._replace(Issues=listOfIssues)
+        allFanzines1942[i]=allFanzines1942[i]._replace(Issues=listOfIssues)
 
     if someBad:
         print("Not all interpretable: "+str(spl))

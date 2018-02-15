@@ -48,6 +48,8 @@ class FanacDirectories:
         return name in self.directories
 
     def GetTuple(self, name):
+        if not name in self.directories.keys():
+            return None
         return (name, self.directories[name])
 
     def len(self):
@@ -152,8 +154,9 @@ def ReadAndAppendFanacFanzineIndexPage(fanzineName, directoryUrl, format, fanzin
     FanacIssueInfo=collections.namedtuple("FanacIssueInfo", "FanzineName, IssueName, Vol, Number, URL")
 
     # We're only prepared to read a few formats.  Skip over the others right now.
-    OKFormats=((0,0,None), (1,6,None), (1,7,None))
-    if not format in OKFormats:
+    OKFormats=((0,0), (1,6), (1,7))
+    codes=(format[0], format[1])
+    if not codes in OKFormats:
         print("   Can't handle format:"+str(format) +" from "+directoryUrl)
         return None
 
@@ -262,8 +265,8 @@ def ReadFanacFanzineIssues(fanzinesList):
     if g_FanacFanzineDirectoryFormats == None:
         g_FanacFanzineDirectoryFormats=ReadFanacOrgFormatsTxt()
 
-    global fanacIssueInfo
-    fanacIssueInfo=[]
+    global g_fanacIssueInfo
+    g_fanacIssueInfo=[]
     for title, dirname in fanzinesList.Dict().items():
 
         # Get the index file format for this directory
@@ -292,9 +295,9 @@ def ReadFanacFanzineIssues(fanzinesList):
             if url == None:
                 continue
             if url.startswith("http://www.fanac.org") and not url.startswith("http://www.fanac.org//fan_funds") and not url.startswith("http://www.fanac.org/fanzines/Miscellaneous"):
-                ret=ReadAndAppendFanacFanzineIndexPage(title, url, (0, 0, None), fanacIssueInfo)
+                ret=ReadAndAppendFanacFanzineIndexPage(title, url, (0, 0, None), g_fanacIssueInfo)
                 if ret!=None:
-                    fanacIssueInfo=ret
+                    g_fanacIssueInfo=ret
             continue
 
         if format == (8, 0):
@@ -306,9 +309,9 @@ def ReadFanacFanzineIssues(fanzinesList):
         url=Helpers.RelPathToURL(dirname)
         print(title, " ", url)
         if url.startswith("http://www.fanac.org") and not url.startswith("http://www.fanac.org//fan_funds"):
-            ret=ReadAndAppendFanacFanzineIndexPage(title, url, fmt, fanacIssueInfo)
+            ret=ReadAndAppendFanacFanzineIndexPage(title, url, fmt, g_fanacIssueInfo)
             if ret!=None:
-                fanacIssueInfo=ret
+                g_fanacIssueInfo=ret
 
     # Now we have a list of all the issues of fanzines onfanac.org which have at least one 1942 issue.(Not all of the issues are 1942.)
     print("----Done reading index.html files on fanac.org")
@@ -329,18 +332,28 @@ def FormatStuff(fz):
         # If both exists, it is a Vn#n pair
         # If V is none, then num is a whole number.
         # Neither existing should never happen
-        if issue.Vol == None and issue.Num == None:
+        if issue.Vol == None and issue.Num == None: # We haved neither Vol nor Num
             v="(oops) "+ fz.Stuff
 
-        elif issue.Vol == None:
-            # We have a fanzine name, and Vol/Num information.
-            # First look up the fanzine to see if it is on fanac.org. The look up the Vol/Issue to see if it is there.
-            dirname=FanacNames.DirName(fz.NameOnFanac)
-            if dirname == None:
+        elif issue.Vol == None:     # We have Num, but not Vol
+            # Look up the fanzine to see if it is on fanac.org. The look up the Vol/Issue to see if it is there.
+            if fz.NameOnFanac != None:
+                name=fz.NameOnFanac
+            else:
+                name=fz.Name
+            val=g_FanacDirectories.GetTuple(name)
+            if val == None:
+                print("   FormatStuff can't find the directory for "+str(fz))
                 continue
+            dirname=val[1]
+            if dirname == None:
+                print("   FormatStuff can't find the directory (2) for "+str(fz))
+                continue
+
+            # OK, let's create the formatted output
             url=None
             text=None
-            if dirname.startswith("dirname"):
+            if dirname.startswith("dirname"):   # Can this still happen?
                 url="Oops"
                 v="Oops"
             else:
@@ -348,6 +361,7 @@ def FormatStuff(fz):
                     if Helpers.CompareIssueSpec(fii.FanzineName, fii.Vol, fii.Number, dirname, issue.Vol, issue.Num):
                         url=fii.URL
                         text=str(issue.Num)
+                        break
                 if url != None:
                     v=Helpers.FormatLink(str(issue.Num), url)
                 else:

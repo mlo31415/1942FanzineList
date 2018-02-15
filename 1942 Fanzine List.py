@@ -53,13 +53,19 @@ for i in range(0, len(allFanzines1942)):
     if FanacOrgReaders.g_FanacDirectories.Contains(jname.lower()):
         name, url=FanacOrgReaders.g_FanacDirectories.GetTuple(jname.lower())
         print("   Found (1): "+name +" --> " + url)
+
+    # Try adding a trailing ", the"since sometimes Joe's list omits this
+    elif FanacOrgReaders.g_FanacDirectories.Contains(jname.lower()+", the"):
+        name, url = FanacOrgReaders.g_FanacDirectories.GetTuple(jname.lower()+", the")
+        print("   Found (2 -- add ', the'): " + name + " --> " + url)
+
+    # Try compressing blanks out
+    elif FanacOrgReaders.g_FanacDirectories.Contains(jname.lower().replace(" ", "")):
+        name, url=FanacOrgReaders.g_FanacDirectories.GetTuple(jname.lower().replace(" ", ""))
+        print("   Found (3 -- remove blanks): " + name + " --> "+url)
+
     else:
-        # Try adding a trailing ", the"since sometimes Joe's list omits this
-        if FanacOrgReaders.g_FanacDirectories.Contains(jname.lower()+", the"):
-            name, url = FanacOrgReaders.g_FanacDirectories.GetTuple(jname.lower()+", the")
-            print("   Found (2): " + name + " --> " + url)
-        else:
-            print("   Not found: "+jname)
+        print("   Not found: "+jname)
 
     # If that didn't work, see if we have a match in the list of external links
     if name == None:
@@ -96,7 +102,7 @@ IssueNumber=collections.namedtuple("IssueNumber", "Vol Num")
 for i in range(0, len(allFanzines1942)):
     fz=allFanzines1942[i]
 
-    if fz.Stuff == None:       # Skip empty stuff
+    if fz.Stuff == None:    # Skip empty stuff
         continue
     stuff="".join(fz.Stuff.split()) # Compress out whitespace
     if len(stuff) == 0:     # Skip if it's allwhitespace
@@ -107,21 +113,25 @@ for i in range(0, len(allFanzines1942)):
 
     # OK, spl is now a list of one or more comma-separated items from Stuff
     # See if they're all interpretable as issue numbers
-    listOfIssues=[]     # A list of issue tuples
-    isReasonable=True
+    listOfIssues=[]     # A list of issue tuples to be created
+    someGood=False
+    someBad=False
     for s in spl:
         iss=IssueNumber(*Helpers.DecodeIssueDesignation(s))
         if iss.Num == None:
-            isReasonable=False
-            break
-        listOfIssues.append(iss)
+            someBad=True
+            continue
+        else:
+            someGood=True
+            listOfIssues.append(iss)
 
-    allFanzines1942[i]._replace(Issues=listOfIssues)
+    if someGood:
+        allFanzines1942[i]._replace(Issues=listOfIssues)
 
-    if not isReasonable:
+    if someBad:
         print("Not all interpretable: "+str(spl))
 
-del isReasonable, s, spl, i, stuff, listOfIssues, iss
+del someGood, someBad, s, spl, i, stuff, listOfIssues, iss
 print("----Done decoding issue list in list of all 1942 fanzines")
 
 

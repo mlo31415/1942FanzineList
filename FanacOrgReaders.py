@@ -214,9 +214,16 @@ def ReadAndAppendFanacFanzineIndexPage(fanzineName, directoryUrl, format, fanzin
         # Now for code which depends on the index,html file format
         if format[0] == 0 and format[1] == 0:   # The default case
 
-            temp=Helpers.GetHrefAndTextFromTag(tableRow[issueCol])
-            row=FanzineInfo(Name=temp[0], URL=temp[1], Year=tableRow[yearCol].string, Vol=None, Num=None)    # (We ignore the Vol and Num for now.)
             # Get the num from the name
+            href=Helpers.GetHrefAndTextFromTag(tableRow[issueCol])
+            temp=str(href[0])
+            p=re.compile("^.*([0-9])\s*$")
+            m=p.match(temp)
+            num=None
+            if m != None and len(m.groups()) == 1:
+                num=int(m.groups()[0])
+
+            row=FanzineInfo(Name=href[0], URL=href[1], Year=tableRow[yearCol].string, Vol=None, Num=num)    # (We ignore the Vol and Num for now.)
             rows.append(row)
 
         elif format[0] == 1 and (format[1] == 6 or format[1] == 7): # The name in the title column ends in V<n>, #<n>

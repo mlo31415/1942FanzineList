@@ -391,7 +391,7 @@ def FormatStuff(fz):
                     print("   FormatStuff: Found on fanac: issue="+str(issue.Num)+"  url="+url)
                     break
             if url != None:
-                v=Helpers.FormatLink("#"+str(issue.Num), url)
+                v=Helpers.FormatLink("#"+str(issue.Num), Helpers.CreateFanacOrgAbsolutePath(fz.NameOnFanac, url))
 
 
             # If we couldn't find anything on fanac.org, look for an external link
@@ -423,7 +423,7 @@ def FormatStuff(fz):
                     print("   FormatStuff: Found on fanac: vol="+str(issue.Vol)+" issue="+str(issue.Num)+"  url="+url)
                     break
             if url != None:
-                v=Helpers.FormatLink("V"+str(issue.Vol)+"#"+str(issue.Num), url)
+                v=Helpers.FormatLink("V"+str(issue.Vol)+"#"+str(issue.Num), Helpers.CreateFanacOrgAbsolutePath(fz.NameOnFanac, url))
 
 
             # If we couldn't find anything on fanac.org, look for an external link
@@ -437,7 +437,7 @@ def FormatStuff(fz):
                             v=Helpers.FormatLink("V"+str(issue.Vol)+"#"+str(issue.Num), url)
 
             if v == None:
-                # No luck anywhere
+                # No luck anywhere, so no link: just text
                 v="V"+str(issue.Vol)+"#"+str(issue.Num)
 
         if len(out) > 0:

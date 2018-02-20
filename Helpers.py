@@ -149,6 +149,11 @@ def LookForTable(tag):
 
 
 #==================================================================================
+def CreateFanacOrgAbsolutePath(fanacDir, str):
+    return "http://www.fanac.org/fanzines/"+fanacDir+"/"+str
+
+
+#==================================================================================
 # Return a properly formatted link
 def FormatLink(name, url):
     return '<a href='+url+'>'+name+'</a>'

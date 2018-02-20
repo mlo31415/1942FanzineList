@@ -31,7 +31,7 @@ print("----Begin combining information into one table.")
 #   3. We highlight those fanzines which are eligible for a 1942 Hugo
 
 # Define a named tuple to hold the expanded data I get by combining all the sources
-ExpandedData=collections.namedtuple("ExpandedData", "Name Editor Stuff IsHugoEligible NameOnFanac URL Issues")
+ExpandedData=collections.namedtuple("ExpandedData", "Name Editor Stuff IsHugoEligible FanacDirName FanacFanzineName URL Issues")
 
 for i in range(0, len(allFanzines1942)):
     fanzine=allFanzines1942[i]
@@ -48,18 +48,18 @@ for i in range(0, len(allFanzines1942)):
     # We want to look up the entries from Joe's list and see if they are on it.
     name=None
     url=None
-    if FanacOrgReaders.g_FanacDirectories.Contains(jname.lower()):
-        name, url=FanacOrgReaders.g_FanacDirectories.GetTuple(jname.lower())
+    if FanacOrgReaders.g_FanacDirectories.Contains(jname):
+        name, url=FanacOrgReaders.g_FanacDirectories.GetTuple(jname)
         print("   Found (1): "+name +" --> " + url)
 
     # Try adding a trailing ", the" since sometimes Joe's list omits this
-    elif FanacOrgReaders.g_FanacDirectories.Contains(jname.lower()+", the"):
-        name, url = FanacOrgReaders.g_FanacDirectories.GetTuple(jname.lower()+", the")
+    elif FanacOrgReaders.g_FanacDirectories.Contains(jname+", the"):
+        name, url = FanacOrgReaders.g_FanacDirectories.GetTuple(jname+", the")
         print("   Found (2 -- add ', the'): " + name + " --> " + url)
 
     # Try compressing blanks out
-    elif FanacOrgReaders.g_FanacDirectories.Contains(jname.lower().replace(" ", "")):
-        name, url=FanacOrgReaders.g_FanacDirectories.GetTuple(jname.lower().replace(" ", ""))
+    elif FanacOrgReaders.g_FanacDirectories.Contains(jname.replace(" ", "")):
+        name, url=FanacOrgReaders.g_FanacDirectories.GetTuple(jname.replace(" ", ""))
         print("   Found (3 -- remove blanks): " + name + " --> "+url)
 
     else:
@@ -67,9 +67,9 @@ for i in range(0, len(allFanzines1942)):
 
     if name != None:
         # Update the 1942 fanzines list with the new information
-        allFanzines1942[i]=ExpandedData(Name=fanzine.Name, Editor=fanzine.Editor, Stuff=fanzine.Stuff, IsHugoEligible=isHugoEligible, NameOnFanac=name, URL=Helpers.RelPathToURL(url), Issues=None)
+        allFanzines1942[i]=ExpandedData(Name=fanzine.Name, Editor=fanzine.Editor, Stuff=fanzine.Stuff, IsHugoEligible=isHugoEligible, FanacDirName=name, FanacFanzineName=name, URL=Helpers.RelPathToURL(url), Issues=None)
     else:
-        allFanzines1942[i]=ExpandedData(Name=fanzine.Name, Editor=fanzine.Editor, Stuff=fanzine.Stuff, IsHugoEligible=isHugoEligible, NameOnFanac=None, URL=None, Issues=None)
+        allFanzines1942[i]=ExpandedData(Name=fanzine.Name, Editor=fanzine.Editor, Stuff=fanzine.Stuff, IsHugoEligible=isHugoEligible, FanacDirName=None, FanacFanzineName=None, URL=None, Issues=None)
 
 del fanzine, jname, name, url, i, isHugoEligible
 print("----Done combining information into one table.")
@@ -186,7 +186,7 @@ f.close()
 f2=open("1942 Fanzines Not on fanac.txt", "w")
 f2.write("1942 Fanzines not on fanac.org\n\n")
 for fz in allFanzines1942:
-    if fz.NameOnFanac == None or fz.URL == None:
+    if fz.FanacDirName == None or fz.URL == None:
         f2.write(fz.Name+"\n")
 f2.flush()
 f2.close()

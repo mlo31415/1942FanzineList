@@ -1,4 +1,5 @@
 import collections
+import Helpers
 
 # This is a tuple which associates all the different forms of a fanzine's name on fanac.org.
 # It does *not* try to deal with namechanges!
@@ -20,18 +21,15 @@ def CompareNames(name1, name2):
     if name1 == None or name2 == None:
         return False
 
-    name1=name1.lower().strip().replace("  ", " ")
-    name2=name2.lower().strip().replace("  ", " ")
-
-    if name1.startswith("the "):
+    if name1.lower().startswith("the "):
         name1=name1[4:]+", the"
         name1=name1.strip()
 
-    if name2.startswith("the "):
+    if name2.lower().startswith("the "):
         name2=name2[4:]+", the"
         name2=name2.strip()
 
-    return name1 == name2
+    return Helpers.CompressName(name1) == Helpers.CompressName(name2)
 
 
 #======================================================================
@@ -148,31 +146,28 @@ def StandardizeName(name):
     if name[0:3] == "The ":
         name=name[4:]+", The"
 
-    # We're going to do compares in lower case with all punctuation and spaces removed!
-    lname=name.lower().replace(" ", "").replace(",", "").replace("-", "").replace("'", "").replace(".", "")
-
     # First see if it is in the list of standard names
     for nt in fanacNameTuples:
-        if nt.FanacStandardName != None and nt.FanacStandardName.replace(" ", "").replace(",", "").replace("-", "").replace("'", "").replace(".", "") == lname:
+        if nt.FanacStandardName != None and Helpers.CompareCompressedName(nt.FanacStandardName, name):
             return nt.FanacStandardName
 
     # Now check other forms.
     for nt in fanacNameTuples:
-        if nt.RetroName != None and nt.RetroName.lower().replace(" ", "").replace(",", "").replace("-", "").replace("'", "").replace(".", "") == lname:
+        if nt.RetroName != None and Helpers.CompareCompressedName(nt.RetroName, name):
             if nt.FanacStandardName != None:
                 return nt.FanacStandardName
             else:
                 return "StandardizeName("+name+") failed"
 
     for nt in fanacNameTuples:
-        if nt.JoesName != None and nt.JoesName.lower().replace(" ", "").replace(",", "").replace("-", "").replace("'", "").replace(".", "") == lname:
+        if nt.JoesName != None and Helpers.CompareCompressedName(nt.JoesName, name):
             if nt.FanacStandardName != None:
                 return nt.FanacStandardName
             else:
                 return "StandardizeName("+name+") failed"
 
     for nt in fanacNameTuples:
-        if nt.DisplayName != None and nt.DisplayName.lower().replace(" ", "").replace(",", "").replace("-", "").replace("'", "").replace(".", "") == lname:
+        if nt.DisplayName != None and Helpers.CompareCompressedName(nt.DisplayName, name):
             if nt.FanacStandardName != None:
                 return nt.FanacStandardName
             else:

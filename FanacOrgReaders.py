@@ -27,8 +27,6 @@ class FanacDirectories:
     def AddDirectory(self, name, dirname):
         isDup=False
 
-        name=name.lower()
-
         if name in self.directories:
             print("   duplicate: name="+name+"  dirname="+dirname)
             return
@@ -37,21 +35,22 @@ class FanacDirectories:
             print("    ignored, because is HTML: "+dirname)
             return
 
-        # Add name and directory reference
-        print("   added to fanacDirectories: name='"+name+"'  dirname='"+dirname+"'")
-        self.directories[name]=dirname
+        # Add name and directory reference\
+        cname=Helpers.CompressName(name)
+        print("   added to fanacDirectories: key='"+cname+"'  name='"+name+"'  dirname='"+dirname+"'")
+        self.directories[cname]=(name, dirname)
         return
 
     def Dict(self):
         return self.directories
 
     def Contains(self, name):
-        return name in self.directories
+        return Helpers.CompressName(name) in self.directories
 
     def GetTuple(self, name):
-        if not name in self.directories.keys():
+        if not self.Contains(name):
             return None
-        return (name, self.directories[name])
+        return self.directories[Helpers.CompressName(name)]
 
     def len(self):
         return len(self.directories)
@@ -94,6 +93,7 @@ def ReadModernOrClassicTable(url):
                 name=trs[i].find_all("td")[1].contents[0].contents[0].contents[0]
                 dirname=trs[i].find_all("td")[1].contents[0].attrs["href"][:-1]
                 g_FanacDirectories.AddDirectory(name, dirname)
+                print("   Added to g_FanacDirectories: " + name + " + " + dirname)
     return
 
 
@@ -266,7 +266,7 @@ def ReadFanacFanzineIssues(fanzinesList):
 
     global g_fanacIssueInfo
     g_fanacIssueInfo=[]
-    for title, dirname in fanzinesList.Dict().items():
+    for key, (title, dirname) in fanzinesList.Dict().items():
 
         # Get the index file format for this directory
         try:
@@ -274,8 +274,6 @@ def ReadFanacFanzineIssues(fanzinesList):
             if '/' in dirname:
                 print("   skipped because of '/' in name:"+dirname)
                 continue
-            if not dn in g_FanacFanzineDirectoryFormats:
-                print("   Not in g_FanacFanzineDirectoryFormats:"+dirname)
             fmt=g_FanacFanzineDirectoryFormats[dn]
             print("   Format: "+title+" --> "+FanacNames.StandardizeName(title.lower())+" --> "+str(fmt))
         except:
@@ -316,7 +314,7 @@ def ReadFanacFanzineIssues(fanzinesList):
     print("----Done reading index.html files on fanac.org")
     return
 
-g_externalLinks1942="dog"
+g_externalLinks1942="dog"   # Just a value to create the variable which can't ever be real
 
 #============================================================================================
 def ReadExternalLinks1942Txt():
@@ -358,7 +356,7 @@ def FormatStuff(fz):
     if ex == None or len(ex) == 0:
         return fz.Stuff
 
-    print("   FormatStuff: fz.Name="+str(fz.Name)+"  fz.NameOnFanac="+str(fz.NameOnFanac))
+    print("   FormatStuff: fz.Name="+str(fz.Name)+"  fz.FanacDirName="+str(fz.FanacDirName))
 
     out=""
     # "ex" is a list of issues for one specific fanzine.
@@ -380,7 +378,7 @@ def FormatStuff(fz):
         # When we have Num but no Vol, we treat Num as a whole number.
         elif issue.Vol == None:     # We have Num, but not Vol
             # Look up the fanzine to see if it is on fanac.org. Then look up the Vol/Issue to see if the specific issue is there.
-            name = fz.NameOnFanac or fz.Name
+            name = fz.FanacFanzineName or fz.Name
 
             # Check the table of all fanzines issues on fanac.org to see if there is a match for fanzine-vol-issue
             url=None
@@ -391,7 +389,7 @@ def FormatStuff(fz):
                     print("   FormatStuff: Found on fanac: issue="+str(issue.Num)+"  url="+url)
                     break
             if url != None:
-                v=Helpers.FormatLink("#"+str(issue.Num), Helpers.CreateFanacOrgAbsolutePath(fz.NameOnFanac, url))
+                v=Helpers.FormatLink("#"+str(issue.Num), Helpers.CreateFanacOrgAbsolutePath(fz.FanacDirName, url))
 
 
             # If we couldn't find anything on fanac.org, look for an external link
@@ -412,7 +410,7 @@ def FormatStuff(fz):
         else:
             # We have both vol and num
             # Look up the fanzine to see if it is on fanac.org. Then look up the Vol/Issue to see if the specific issue is there.
-            name = fz.NameOnFanac or fz.Name
+            name = fz.FanacFanzineName or fz.Name
 
             # Check the table of all fanzines issues on fanac.org to see if there is a match for fanzine-vol-issue
             url=None
@@ -423,7 +421,7 @@ def FormatStuff(fz):
                     print("   FormatStuff: Found on fanac: vol="+str(issue.Vol)+" issue="+str(issue.Num)+"  url="+url)
                     break
             if url != None:
-                v=Helpers.FormatLink("V"+str(issue.Vol)+"#"+str(issue.Num), Helpers.CreateFanacOrgAbsolutePath(fz.NameOnFanac, url))
+                v=Helpers.FormatLink("V"+str(issue.Vol)+"#"+str(issue.Num), Helpers.CreateFanacOrgAbsolutePath(fz.FanacDirName, url))
 
 
             # If we couldn't find anything on fanac.org, look for an external link

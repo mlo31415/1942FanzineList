@@ -1,10 +1,7 @@
 import os
-import re
 from bs4 import NavigableString
 import FanacNames
-from bs4 import BeautifulSoup
-import requests
-import collections
+
 
 #-----------------------------------------
 # Find text bracketed by <b>...</b>
@@ -171,3 +168,13 @@ def CompareIssueSpec(name1, vol1, num1, name2, vol2, num2):
     if num1 != num2:
         return False
     return True
+
+#==================================================================================
+# Create a name for comparison purposes which is lower case and without whitespace or punctuation
+def CompressName(name):
+    return name.lower().replace(" ", "").replace(",", "").replace("-", "").replace("'", "").replace(".", "").replace("’", "")
+
+
+#==================================================================================
+def CompareCompressedName(n1, n2):
+    return CompressName(n1) == CompressName(n2)

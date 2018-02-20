@@ -44,31 +44,3 @@ def Read1942FanzineList():
     print("---fanzines1942 list created with "+str(len(allFanzines1942))+" elements")
     print("----Done reading Joe's 1942 Fanzine List.txt")
     return allFanzines1942
-
-
-#============================================================================================
-def ReadLinks1942Txt():
-    print("----Begin reading Links1942.txt")
-    # Now we read Links1942.txt, which contains links to issues of fanzines *outside* fanac.org.
-    # It's organized as a table, with the first row a ';'-delimited list of column headers
-    #    and the remaining rows are each a ';'-delimited pointer to an exteral fanzine
-    # First read the header line which names the columns.  The headers are separated from ';", so we need to remove these.
-    f=open("Links1942.txt")
-    line=f.readline()
-    line=line.replace(";", "")
-    links1942ColNames=line.split(" ")
-    # Define a named tuple to hold the data I get from the external links input file
-    # This -- elegantly -- defines a named tuple to hold the elements of a line and names each element according to the column header in the first row.
-    ExternalLinksData=collections.namedtuple("ExternalLinksData", line)
-    # Now read the rest of the data.
-    externalLinks1942=[]
-    for line in f:  # Each line after the first is a link to an external fanzine
-
-        temp=line.split(";")
-        t2=[]
-        for t in temp:
-            t2.append(t.strip())
-        externalLinks1942.append(ExternalLinksData(*tuple(t2)))  # Turn the list into a named tuple.
-    f.close()
-    print("----Done reading Links1942.txt")
-    return externalLinks1942

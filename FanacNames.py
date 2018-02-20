@@ -20,14 +20,16 @@ def CompareNames(name1, name2):
     if name1 == None or name2 == None:
         return False
 
-    name1=name1.lower()
-    name2=name2.lower()
+    name1=name1.lower().strip().replace("  ", " ")
+    name2=name2.lower().strip().replace("  ", " ")
 
     if name1.startswith("the "):
         name1=name1[4:]+", the"
+        name1=name1.strip()
 
     if name2.startswith("the "):
         name2=name2[4:]+", the"
+        name2=name2.strip()
 
     return name1 == name2
 
@@ -146,30 +148,31 @@ def StandardizeName(name):
     if name[0:3] == "The ":
         name=name[4:]+", The"
 
-    lname=name.lower()
+    # We're going to do compares in lower case with all punctuation and spaces removed!
+    lname=name.lower().replace(" ", "").replace(",", "").replace("-", "").replace("'", "").replace(".", "")
 
     # First see if it is in the list of standard names
     for nt in fanacNameTuples:
-        if nt.FanacStandardName != None and nt.FanacStandardName.lower() == lname:
+        if nt.FanacStandardName != None and nt.FanacStandardName.replace(" ", "").replace(",", "").replace("-", "").replace("'", "").replace(".", "") == lname:
             return nt.FanacStandardName
 
     # Now check other forms.
     for nt in fanacNameTuples:
-        if nt.RetroName != None and nt.RetroName.lower() == lname:
+        if nt.RetroName != None and nt.RetroName.lower().replace(" ", "").replace(",", "").replace("-", "").replace("'", "").replace(".", "") == lname:
             if nt.FanacStandardName != None:
                 return nt.FanacStandardName
             else:
                 return "StandardizeName("+name+") failed"
 
     for nt in fanacNameTuples:
-        if nt.JoesName != None and nt.JoesName.lower() == lname:
+        if nt.JoesName != None and nt.JoesName.lower().replace(" ", "").replace(",", "").replace("-", "").replace("'", "").replace(".", "") == lname:
             if nt.FanacStandardName != None:
                 return nt.FanacStandardName
             else:
                 return "StandardizeName("+name+") failed"
 
     for nt in fanacNameTuples:
-        if nt.DisplayName != None and nt.DisplayName.lower() == lname:
+        if nt.DisplayName != None and nt.DisplayName.lower().replace(" ", "").replace(",", "").replace("-", "").replace("'", "").replace(".", "") == lname:
             if nt.FanacStandardName != None:
                 return nt.FanacStandardName
             else:

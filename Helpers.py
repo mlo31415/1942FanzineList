@@ -1,6 +1,7 @@
 import os
 import re
 from bs4 import NavigableString
+import FanacNames
 from bs4 import BeautifulSoup
 import requests
 import collections
@@ -156,7 +157,7 @@ def FormatLink(name, url):
 #==================================================================================
 # Compare a filename, volume and number woith a second set
 def CompareIssueSpec(name1, vol1, num1, name2, vol2, num2):
-    if name1.lower() != name2.lower():
+    if not FanacNames.CompareNames(name1, name2):
         return False
     if (vol1 == None and vol2 != None) or (vol1 != None and vol2 == None):
         return False

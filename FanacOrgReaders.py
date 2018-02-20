@@ -3,6 +3,7 @@ import requests
 import collections
 import Helpers
 import FanacNames
+import RetroHugoReaders
 import re
 
 global g_FanacFanzineDirectoryFormats
@@ -54,15 +55,6 @@ class FanacDirectories:
 
     def len(self):
         return len(self.directories)
-
-    # def __iter__(self):
-    #     return self
-    #
-    # def __next__(self):
-    #     if self.index == len(self.directories):
-    #         raise StopIteration
-    #     self.index = self.index + 1
-    #     return self.directories.items()[self.index]
 
 # End of class FanacDirectories:
 #==========================================================
@@ -157,7 +149,7 @@ def ReadAndAppendFanacFanzineIndexPage(fanzineName, directoryUrl, format, fanzin
     OKFormats=((0,0), (1,6), (1,7))
     codes=(format[0], format[1])
     if not codes in OKFormats:
-        print("   Can't handle format:"+str(format) +" from "+directoryUrl)
+        print("      Can't handle format:"+str(format) +" from "+directoryUrl)
         return None
 
     # Download the index.html which lists all of the issues of the specified fanzine currently on the site
@@ -205,10 +197,10 @@ def ReadAndAppendFanacFanzineIndexPage(fanzineName, directoryUrl, format, fanzin
 
     # If there's no yearCol or issueCol, just print a message and go on to the next fanzine
     if yearCol == None:
-        print("    No yearCol found")
+        print("       No yearCol found")
         return None
     if issueCol == None:
-        print("    No issueCol found")
+        print("       No issueCol found")
         return None
 
     # What's left is one or more rows, each corresponding to an issue of that fanzine.
@@ -243,9 +235,9 @@ def ReadAndAppendFanacFanzineIndexPage(fanzineName, directoryUrl, format, fanzin
     # Now select just the fanzines for 1942 and append them to the fanzineIssueList
     for row in rows:
         if row.Year == "1942":
-            print(str(row))
+            print("      "+str(row))
             issue=FanacIssueInfo(FanzineName=fanzineName, URL=row.URL, Number=row.Num, Vol=row.Vol, IssueName=None)
-            print("1942: ReadAndAppendFanacFanzineIndexPage: appending "+str(issue))
+            print("      1942: ReadAndAppendFanacFanzineIndexPage: appending "+str(issue))
             fanzineIssueList.append(issue)
 
     return fanzineIssueList
@@ -317,60 +309,133 @@ def ReadFanacFanzineIssues(fanzinesList):
     print("----Done reading index.html files on fanac.org")
     return
 
+g_externalLinks1942="dog"
+
+#============================================================================================
+def ReadExternalLinks1942Txt():
+    print("----Begin reading External Links 1942.txt")
+    # Now we read Links1942.txt, which contains links to issues of fanzines *outside* fanac.org.
+    # It's organized as a table, with the first row a ';'-delimited list of column headers
+    #    and the remaining rows are each a ';'-delimited pointer to an exteral fanzine
+    # First read the header line which names the columns.  The headers are separated from ';", so we need to remove these.
+    f=open("External Links 1942.txt")
+    line=f.readline()
+    line=line.replace(";", "")
+    links1942ColNames=line.split(" ")
+    # Define a named tuple to hold the data I get from the external links input file
+    # This -- elegantly -- defines a named tuple to hold the elements of a line and names each element according to the column header in the first row.
+    ExternalLinksData=collections.namedtuple("ExternalLinksData", line)
+
+    # Now read the rest of the data.
+    global g_externalLinks1942
+    g_externalLinks1942=[]
+    for line in f:  # Each line after the first is a link to an external fanzine
+        print("   line="+line)
+        temp=line.split(";")
+        t2=[]
+        for t in temp:
+            t2.append(t.strip())
+        g_externalLinks1942.append(ExternalLinksData(*tuple(t2)))  # Turn the list into a named tuple.
+    f.close()
+    print("----Done reading External Links 1942.txt")
+    return
+
 
 #================================================================================================
 # Inline function to format Stuff, which is a list of IssueSpecs
 # Stuff is commonly a list of issue specification interspersed with nonce items
 # For now, we'll attempt only to format what we interpret, above: whole numbers and Vol/# combinations
 def FormatStuff(fz):
+    global g_externalLinks1942
     ex=fz.Issues
     if ex == None or len(ex) == 0:
         return fz.Stuff
+
+    print("   FormatStuff: fz.Name="+str(fz.Name)+"  fz.NameOnFanac="+str(fz.NameOnFanac))
+
     out=""
+    # "ex" is a list of issues for one specific fanzine.
+    # Our job here is to turn this into HTML which includes links for those issues which have links.
     for issue in ex:
         # issue is a tuple of a vol and a num.
         # If both exists, it is a Vn#n pair
         # If V is none, then num is a whole number.
         # Neither existing should never happen
-        if issue.Vol == None and issue.Num == None: # We haved neither Vol nor Num
-            v="(oops) "+ fz.Stuff
 
+        # We first look to see if fanzine-vol-issue points to a fanzine on fanac.org
+        # Failing that, we look to see if it is in the External Links table
+        # Failing that, we just append the plain text
+        found=False
+        v=None
+        if issue.Vol == None and issue.Num == None:     # We have neither Vol nor Num.  We have no issue information.
+            v="(oops)"
+
+        # When we have Num but no Vol, we treat Num as a whole number.
         elif issue.Vol == None:     # We have Num, but not Vol
-            # Look up the fanzine to see if it is on fanac.org. The look up the Vol/Issue to see if it is there.
-            if fz.NameOnFanac != None:
-                name=fz.NameOnFanac
-            else:
-                name=fz.Name
-            val=g_FanacDirectories.GetTuple(name)
-            if val == None:
-                print("   FormatStuff can't find the directory for "+str(fz))
-                continue
-            dirname=val[1]
-            if dirname == None:
-                print("   FormatStuff can't find the directory (2) for "+str(fz))
-                continue
+            # Look up the fanzine to see if it is on fanac.org. Then look up the Vol/Issue to see if the specific issue is there.
+            name = fz.NameOnFanac or fz.Name
 
-            # OK, let's create the formatted output
+            # Check the table of all fanzines issues on fanac.org to see if there is a match for fanzine-vol-issue
             url=None
-            text=None
-            if dirname.startswith("dirname"):   # Can this still happen?
-                url="Oops"
-                v="Oops"
-            else:
-                for fii in g_fanacIssueInfo:
-                    if Helpers.CompareIssueSpec(fii.FanzineName, fii.Vol, fii.Number, dirname, issue.Vol, issue.Num):
-                        url=fii.URL
-                        text=str(issue.Num)
-                        break
-                if url != None:
-                    v=Helpers.FormatLink(str(issue.Num), url)
-                else:
-                    v="#"+str(issue.Num)
+            for fii in g_fanacIssueInfo:
+                if Helpers.CompareIssueSpec(fii.FanzineName, fii.Vol, fii.Number, name, issue.Vol, issue.Num):
+                    url=fii.URL
+                    text=str(issue.Num)
+                    print("   FormatStuff: Found on fanac: issue="+str(issue.Num)+"  url="+url)
+                    break
+            if url != None:
+                v=Helpers.FormatLink("#"+str(issue.Num), url)
+
+
+            # If we couldn't find anything on fanac.org, look for an external link
+            if v == None:
+                # We have a name, and a whole number.  See if they turn up as an external link]
+                for ext in g_externalLinks1942:
+                    if FanacNames.CompareNames(ext.Title, name) and int(ext.Whole_Number) == issue.Num:
+                        url=ext.URL
+                        print("   FormatStuff: Found external: issue="+str(issue.Num)+"  url="+url)
+                        found=True
+                        if url!=None:
+                            v=Helpers.FormatLink("#"+str(issue.Num), url)
+
+            if v == None:
+                # No luck anywhere
+                v="#"+str(issue.Num)
+
         else:
-            v="V"+str(issue.Vol)+"#"+str(issue.Num)
+            # We have both vol and num
+            # Look up the fanzine to see if it is on fanac.org. Then look up the Vol/Issue to see if the specific issue is there.
+            name = fz.NameOnFanac or fz.Name
+
+            # Check the table of all fanzines issues on fanac.org to see if there is a match for fanzine-vol-issue
+            url=None
+            for fii in g_fanacIssueInfo:
+                if Helpers.CompareIssueSpec(fii.FanzineName, fii.Vol, fii.Number, name, issue.Vol, issue.Num):
+                    url=fii.URL
+                    text=str(issue.Num)
+                    print("   FormatStuff: Found on fanac: vol="+str(issue.Vol)+" issue="+str(issue.Num)+"  url="+url)
+                    break
+            if url != None:
+                v=Helpers.FormatLink("V"+str(issue.Vol)+"#"+str(issue.Num), url)
+
+
+            # If we couldn't find anything on fanac.org, look for an external link
+            if v == None:
+                # We have a name, and a whole number.  See if they turn up as an external link]
+                for ext in g_externalLinks1942:
+                    if Helpers.CompareIssueSpec(ext.Title, ext.Volume, ext.Number, name, issue.Vol, issue.Num):
+                        url=ext.URL
+                        print("   FormatStuff: Found external: Vol="+str(issue.Vol)+" issue="+str(issue.Num)+"  url="+url)
+                        if url!=None:
+                            v=Helpers.FormatLink("V"+str(issue.Vol)+"#"+str(issue.Num), url)
+
+            if v == None:
+                # No luck anywhere
+                v="V"+str(issue.Vol)+"#"+str(issue.Num)
 
         if len(out) > 0:
             out=out+", "
-        out=out+v
+        if v != None:
+            out=out+v
     return out
 

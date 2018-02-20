@@ -17,13 +17,11 @@ FanacNames.AddFanacDirectories(FanacOrgReaders.g_FanacDirectories)
 # This will also add any new names found to the FanacNames tuples
 allFanzines1942=RetroHugoReaders.Read1942FanzineList()
 
-# A dictionary of links of individual issues to external websites
-global externalLinks1942
-externalLinks1942=RetroHugoReaders.ReadLinks1942Txt()
+FanacOrgReaders.ReadExternalLinks1942Txt()
 
 # Read the fanac.org fanzine direcgtory and produce a lost of all issues present
 FanacOrgReaders.ReadFanacFanzineIssues(FanacOrgReaders.g_FanacDirectories)
-
+g_externalLinks1942="dog"
 
 #============================================================================================
 print("----Begin combining information into one table.")
@@ -54,7 +52,7 @@ for i in range(0, len(allFanzines1942)):
         name, url=FanacOrgReaders.g_FanacDirectories.GetTuple(jname.lower())
         print("   Found (1): "+name +" --> " + url)
 
-    # Try adding a trailing ", the"since sometimes Joe's list omits this
+    # Try adding a trailing ", the" since sometimes Joe's list omits this
     elif FanacOrgReaders.g_FanacDirectories.Contains(jname.lower()+", the"):
         name, url = FanacOrgReaders.g_FanacDirectories.GetTuple(jname.lower()+", the")
         print("   Found (2 -- add ', the'): " + name + " --> " + url)
@@ -65,30 +63,15 @@ for i in range(0, len(allFanzines1942)):
         print("   Found (3 -- remove blanks): " + name + " --> "+url)
 
     else:
-        print("   Not found: "+jname)
+        print("   Not found in g_FanacDirectories: "+jname)
 
-    # If that didn't work, see if we have a match in the list of external links
-    if name == None:
-        for ex in externalLinks1942:
-            if jname.lower() == ex.Title.lower():
-                name=ex.Title
-                url=ex.URL
-                print("   Found (3): " + name + " --> " + url)
-                break
-            else:
-                # Try adding a trailing ", the" since sometimes Joe's list omits this
-                if (jname.lower() + ", the") == ex.Title.lower():
-                    name=ex.Title
-                    url=ex.URL
-                    print("   Found (4): " + name + " --> " + url)
-                    break
-    if name == None:
-        print("   Not found (5): " + jname)
+    if name != None:
+        # Update the 1942 fanzines list with the new information
+        allFanzines1942[i]=ExpandedData(Name=fanzine.Name, Editor=fanzine.Editor, Stuff=fanzine.Stuff, IsHugoEligible=isHugoEligible, NameOnFanac=name, URL=Helpers.RelPathToURL(url), Issues=None)
+    else:
+        allFanzines1942[i]=ExpandedData(Name=fanzine.Name, Editor=fanzine.Editor, Stuff=fanzine.Stuff, IsHugoEligible=isHugoEligible, NameOnFanac=None, URL=None, Issues=None)
 
-    # Update the 1942 fanzines list with the new information
-    allFanzines1942[i]=ExpandedData(Name=fanzine.Name, Editor=fanzine.Editor, Stuff=fanzine.Stuff, IsHugoEligible=isHugoEligible, NameOnFanac=name, URL=Helpers.RelPathToURL(url), Issues=None)
-
-del fanzine, ex, jname, name, url, i, isHugoEligible
+del fanzine, jname, name, url, i, isHugoEligible
 print("----Done combining information into one table.")
 
 
@@ -101,6 +84,7 @@ IssueNumber=collections.namedtuple("IssueNumber", "Vol Num")
 # We'll start by trying to recognize *just* the case where we have a comma-separated list of numbers and nothing else.
 for i in range(0, len(allFanzines1942)):
     fz=allFanzines1942[i]
+    print("   Decoding issue list: "+ str(fz))
 
     if fz.Stuff == None:    # Skip empty stuff
         continue
@@ -130,6 +114,8 @@ for i in range(0, len(allFanzines1942)):
 
     if someBad:
         print("Not all interpretable: "+str(spl))
+
+
 
 del someGood, someBad, s, spl, i, stuff, listOfIssues, iss
 print("----Done decoding issue list in list of all 1942 fanzines")

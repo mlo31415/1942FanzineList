@@ -217,7 +217,7 @@ def ReadAndAppendFanacFanzineIndexPage(fanzineName, directoryUrl, format, fanzin
             # Get the num from the name
             href=Helpers.GetHrefAndTextFromTag(tableRow[issueCol])
             temp=str(href[0])
-            p=re.compile("^.*([0-9])\s*$")
+            p=re.compile("^.*\D([0-9]+)\s*$")
             m=p.match(temp)
             num=None
             if m != None and len(m.groups()) == 1:

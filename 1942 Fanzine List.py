@@ -86,38 +86,73 @@ for i in range(0, len(allFanzines1942)):
     fz=allFanzines1942[i]
     print("   Decoding issue list: "+ str(fz))
 
-    if fz.Stuff == None:    # Skip empty stuff
+    stuff=fz.Stuff
+    if stuff == None:    # Skip empty stuff
         continue
-    stuff="".join(fz.Stuff.split()) # Compress out whitespace
-    if len(stuff) == 0:     # Skip if it's allwhitespace
-        continue
-    spl=stuff.split(",")
-    if len(spl) == 0:       # Probably can't happen
+    if len("".join(stuff.split())) == 0: # Compress out whitespace and skip if it's all whitespace
         continue
 
-    # OK, spl is now a list of one or more comma-separated items from Stuff
-    # See if they're all interpretable as issue numbers
-    listOfIssues=[]     # A list of issue tuples to be created
-    someGood=False
-    someBad=False
-    for s in spl:
-        iss=IssueNumber(*Helpers.DecodeIssueDesignation(s))
-        if iss.Num == None:
-            someBad=True
-            continue
+    # Turn all multiple spaces into a single space
+    stuff=stuff.replace("  ", " ").replace("  ", " ").replace("  ", " ")   # Hopefully there's never more than 8 spaces in succession...
+
+    issueSpecList=FanacNames.IssueSpecList()   # This will be the resulting list of IssueSpecs
+
+    # Cases:
+    #   1,2,3,4
+    #   V1#2, V3#4
+    #   V1#2,3 or V1:2,3
+    #   Sometimes a semicolon is used as a separator....
+    #   They can be intermixed.  This causes a problem because the comma winds up having different meanings in different cases.
+    # And sometimes there is odd stuff tossed in which can't be interpreted.
+
+    while len(stuff) > 0:      # We'll whittle stuff down as we interpret it.
+        # If we begin with a "V", we have either a volume-issue pair or a volume followed by a related list of issues
+        # We can distinguish a list of issues because Joe never puts a space in the related list
+        issueSpecs=None
+        if (stuff[0].lower() == "v"):
+            # Look for a subsequent ", " or eol or ";"
+            loc=stuff.find(", ")
+            if loc == -1:
+                loc=stuff.find("; ")
+            if loc == -1 or loc+2 > len(stuff):
+                # This spec appears to extend to the end of the string
+                specStr=stuff
+                stuff=""
+            else:
+                specStr=stuff[:loc].strip()
+                stuff=stuff[loc+2:].strip()
+
+            iss=FanacNames.InterpretIssueSpecText(specStr)
+
+            if iss != None:
+                issueSpecList.Append(iss)
+
         else:
-            someGood=True
-            listOfIssues.append(iss)
+            # It's not a Vn#n sort of thing, but a list of whole numbers
+            # Look for a ", " or eol or ";"
+            stuff=stuff.strip()
+            loc=stuff.find(",")
+            if loc == -1:
+                loc=stuff.find(";")
 
-    if someGood:
-        allFanzines1942[i]=allFanzines1942[i]._replace(Issues=listOfIssues)
+            try:
+                if loc != -1:
+                    specStr=stuff[:loc]
+                    stuff=stuff[loc+1:].strip()
+                    issueSpecList.Append([FanacNames.IssueSpec().Set1(int(specStr))])
+                else:
+                    issueSpecList.Append([FanacNames.IssueSpec().Set1(int(stuff))])
+                    stuff=""
+            except:
+                stuff=""    # TODO: Should try to recover so any later specs can be interpreted
+                continue
 
-    if someBad:
-        print("Not all interpretable: "+str(spl))
+    print("   "+issueSpecList.Print())
+
+    allFanzines1942[i]=allFanzines1942[i]._replace(Issues=issueSpecList)
 
 
-
-del someGood, someBad, s, spl, i, stuff, listOfIssues, iss
+del i, stuff, iss, loc, specStr, issueSpecs
 print("----Done decoding issue list in list of all 1942 fanzines")
 
 

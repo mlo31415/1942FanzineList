@@ -28,12 +28,12 @@ def Read1942FanzineList():
 
         loc1=line.find("(")
         if loc1==-1:
-            print("*** Could find opening '(' in '"+line+"'")
+            print("*** Read1942FanzineList: Could not find opening '(' in '"+line+"'")
             continue
 
         loc2=line.find(")", loc1)
         if loc2==-1:
-            print("*** Could find closing ')' in '"+line+"'")
+            print("*** Read1942FanzineList: Could not find closing ')' in '"+line+"'")
             continue
 
         allFanzines1942.append(JoesData(line[:loc1-1], line[loc1+1:loc2].title(), line[loc2+1:]))
@@ -41,6 +41,6 @@ def Read1942FanzineList():
 
 
     f.close()
-    print("---fanzines1942 list created with "+str(len(allFanzines1942))+" elements")
+    print("----fanzines1942 list created with "+str(len(allFanzines1942))+" elements")
     print("----Done reading Joe's 1942 Fanzine List.txt")
     return allFanzines1942

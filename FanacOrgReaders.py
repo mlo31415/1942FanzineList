@@ -353,15 +353,15 @@ def ReadExternalLinks1942Txt():
 def FormatStuff(fz):
     global g_externalLinks1942
     ex=fz.Issues
-    if ex == None or len(ex) == 0:
+    if ex == None or ex.len() == 0:
         return fz.Stuff
 
-    print("   FormatStuff: fz.Name="+str(fz.Name)+"  fz.FanacDirName="+str(fz.FanacDirName))
+    print("   FormatStuff: fz.Name="+str(fz.Name)+"  fz.FanacDirName="+str(fz.FanacDirName)+"   fz.Stuff="+fz.Issues.Print())
 
     out=""
     # "ex" is a list of issues for one specific fanzine.
     # Our job here is to turn this into HTML which includes links for those issues which have links.
-    for issue in ex:
+    for issue in ex.List():
         # issue is a tuple of a vol and a num.
         # If both exists, it is a Vn#n pair
         # If V is none, then num is a whole number.
@@ -372,43 +372,43 @@ def FormatStuff(fz):
         # Failing that, we just append the plain text
         found=False
         v=None
-        if issue.Vol == None and issue.Num == None:     # We have neither Vol nor Num.  We have no issue information.
+        if issue.Vol == None and issue.Num == None and issue.Whole == None:     # We have neither Vol nor Num.  We have no issue information.
             v="(oops)"
 
-        # When we have Num but no Vol, we treat Num as a whole number.
-        elif issue.Vol == None:     # We have Num, but not Vol
+        # We shoould either habe a Whole (number) or a Vol+Num
+        elif issue.Whole != None:     # We have Num, but not Vol
             # Look up the fanzine to see if it is on fanac.org. Then look up the Vol/Issue to see if the specific issue is there.
             name = fz.FanacFanzineName or fz.Name
 
             # Check the table of all fanzines issues on fanac.org to see if there is a match for fanzine-vol-issue
             url=None
             for fii in g_fanacIssueInfo:
-                if Helpers.CompareIssueSpec(fii.FanzineName, fii.Vol, fii.Number, name, issue.Vol, issue.Num):
+                if Helpers.CompareIssueSpec(fii.FanzineName, fii.Vol, fii.Number, name, None, issue.Whole):
                     url=fii.URL
-                    text=str(issue.Num)
-                    print("   FormatStuff: Found on fanac: issue="+str(issue.Num)+"  url="+url)
+                    text=str(issue.Whole)
+                    print("   FormatStuff: Found on fanac: issue="+str(issue.Whole)+"  url="+url)
                     break
             if url != None:
-                v=Helpers.FormatLink("#"+str(issue.Num), Helpers.CreateFanacOrgAbsolutePath(fz.FanacDirName, url))
+                v=Helpers.FormatLink("#"+str(issue.Whole), Helpers.CreateFanacOrgAbsolutePath(fz.FanacDirName, url))
 
 
             # If we couldn't find anything on fanac.org, look for an external link
             if v == None:
                 # We have a name, and a whole number.  See if they turn up as an external link]
                 for ext in g_externalLinks1942:
-                    if FanacNames.CompareNames(ext.Title, name) and int(ext.Whole_Number) == issue.Num:
+                    if FanacNames.CompareNames(ext.Title, name) and int(ext.Whole_Number) == issue.Whole:
                         url=ext.URL
-                        print("   FormatStuff: Found external: issue="+str(issue.Num)+"  url="+url)
+                        print("   FormatStuff: Found external: issue="+str(issue.Whole)+"  url="+url)
                         found=True
                         if url!=None:
-                            v=Helpers.FormatLink("#"+str(issue.Num), url)
+                            v=Helpers.FormatLink("#"+str(issue.Whole), url)
 
             if v == None:
                 # No luck anywhere
-                v="#"+str(issue.Num)
+                v="#"+str(issue.Whole)
 
         else:
-            # We have both vol and num
+            # We don't have issue.Whole, so we must have both vol and num
             # Look up the fanzine to see if it is on fanac.org. Then look up the Vol/Issue to see if the specific issue is there.
             name = fz.FanacFanzineName or fz.Name
 

@@ -173,3 +173,106 @@ def StandardizeName(name):
             else:
                 return "StandardizeName("+name+") failed"
     return "StandardizeName("+name+") failed"
+
+
+class IssueSpec:
+
+    def __init__(self):
+        self.Vol=None
+        self.Num=None
+        self.Whole=None
+
+    def Set2(self, v, n):
+        self.Vol=v
+        self.Num=n
+        return self
+
+    def Set1(self, w):
+        self.Whole=w
+        return self
+
+    def Print(self):
+        v="-"
+        if self.Vol != None:
+            v=str(self.Vol)
+        n="-"
+        if self.Num != None:
+            n=str(self.Num)
+        w="-"
+        if self.Whole != None:
+            w=str(self.Whole)
+
+        return "IS(V"+v+", N"+n+", W"+w+")"
+
+
+class IssueSpecList:
+    def __init__(self):
+        self.list=[]
+
+    def Append1(self, issuespec):
+        self.list.append(issuespec)
+
+    def Append2(self, vol, issuelist):
+        for i in issuelist:
+            self.Append(self, IssueSpec(vol, i))
+
+    def Append(self, isl):
+        self.list.extend(isl)
+
+    def Print(self):
+        s=""
+        for i in self.list:
+            if len(s) > 0:
+                s=s+", "
+            if i != None:
+                s=s+i.Print()
+            else:
+                s=s+"Missing ISlist"
+        if len(s) == 0:
+            s="Empty ISlist"
+        return s
+
+    def len(self):
+        return len(self.list)
+
+    def List(self):
+        return self.list
+
+# This takes one issue text string (which may specify multiple issues) and interpret it.
+def InterpretIssueSpecText(specStr):
+    # OK, now try to decode the spec and return a list (possibly of length 1) of IssueSpecs
+    # It could be
+    #   Vnn#nn
+    #   Vnn:nn
+    #   Vnn#nn,nn,nn
+    #   Vnn:nn,nn,nn
+
+    try:
+        # First split the Volume and Number parts on the '#' or ':'
+        loc=specStr.find("#")
+        if loc == -1:
+            loc=specStr.find(":")
+
+        # Do we have a volume+number-type spec?
+        if loc != -1:
+            vstr=specStr[1:loc]  # Remove the 'V'
+            vol=int(vstr)
+
+            nstr=specStr[loc+1:]
+            # This could be either a single number or a comma-separated string of numbers
+            nlist=nstr.split(",")
+            if len(nlist) == -1:
+                num=int(nlist)
+                return [IssueSpec().Set2(vol, num)]
+            else:
+                isl=[]
+                for n in nlist:
+                    isl.append(IssueSpec().Set2(vol, int(n)))
+                return isl
+
+        # OK, since there was no delimiter, we have a single issue number
+        return [IssueSpec().Set1(int(specStr))]
+
+    except:
+        print("oops.")
+        return None

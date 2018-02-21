@@ -226,7 +226,7 @@ def ReadAndAppendFanacFanzineIndexPage(fanzineName, directoryUrl, format, fanzin
             row=FanzineInfo(Name=href[0], URL=href[1], Year=tableRow[yearCol].string, Vol=None, Num=num)    # (We ignore the Vol and Num for now.)
             rows.append(row)
 
-        elif format[0] == 1 and (format[1] == 6 or format[1] == 7): # The name in the title column ends in V<n>, #<n>
+        elif format[0] == 1 and format[1] == 6: # The name in the title column ends in V<n>, #<n>
 
             # We need two things: The contents of the first (linking) column and the year.
             name, href=Helpers.GetHrefAndTextFromTag(tableRow[issueCol])

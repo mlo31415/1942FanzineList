@@ -67,7 +67,7 @@ for i in range(0, len(allFanzines1942)):
 
     if name != None:
         # Update the 1942 fanzines list with the new information
-        allFanzines1942[i]=ExpandedData(Name=fanzine.Name, Editor=fanzine.Editor, Stuff=fanzine.Stuff, IsHugoEligible=isHugoEligible, FanacDirName=name, FanacFanzineName=name, URL=Helpers.RelPathToURL(url), Issues=None)
+        allFanzines1942[i]=ExpandedData(Name=fanzine.Name, Editor=fanzine.Editor, Stuff=fanzine.Stuff, IsHugoEligible=isHugoEligible, FanacDirName=url, FanacFanzineName=name, URL=Helpers.RelPathToURL(url), Issues=None)
     else:
         allFanzines1942[i]=ExpandedData(Name=fanzine.Name, Editor=fanzine.Editor, Stuff=fanzine.Stuff, IsHugoEligible=isHugoEligible, FanacDirName=None, FanacFanzineName=None, URL=None, Issues=None)
 
@@ -93,7 +93,7 @@ for i in range(0, len(allFanzines1942)):
         continue
 
     # Turn all multiple spaces into a single space
-    stuff=stuff.replace("  ", " ").replace("  ", " ").replace("  ", " ")   # Hopefully there's never more than 8 spaces in succession...
+    stuff=stuff.replace("  ", " ").replace("  ", " ").replace("  ", " ").strip()   # Hopefully there's never more than 8 spaces in succession...
 
     issueSpecList=FanacNames.IssueSpecList()   # This will be the resulting list of IssueSpecs
 
@@ -209,6 +209,7 @@ for fz in allFanzines1942:
         f.write('</td>\n<td valign="top" align="left">\n<ul>')
 
     print(txt)
+    print(htm)
     if htm != None:
         f.write('<li><p>\n')
         f.write(htm+'</li>\n')

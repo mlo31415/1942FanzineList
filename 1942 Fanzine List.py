@@ -21,7 +21,6 @@ FanacOrgReaders.ReadExternalLinks1942Txt()
 
 # Read the fanac.org fanzine direcgtory and produce a lost of all issues present
 FanacOrgReaders.ReadFanacFanzineIssues(FanacOrgReaders.g_FanacDirectories)
-g_externalLinks1942="dog"
 
 #============================================================================================
 print("----Begin combining information into one table.")

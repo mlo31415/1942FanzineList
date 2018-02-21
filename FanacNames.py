@@ -9,8 +9,8 @@ import Helpers
 #   RetroNsame is the named used in the Retro_Hugos.html file on fanac.org
 FanacName=collections.namedtuple("FanacName", "JoesName, DisplayName, FanacStandardName, RetroName")
 
-global fanacNameTuples  # Holds all the accumulated name tuples
-fanacNameTuples=[]
+global g_fanacNameTuples  # Holds all the accumulated name tuples
+g_fanacNameTuples=[]
 
 # We will build up a list of these tuples with one or more access functions so that the appropriate tuple can be easily found
 # (Basically functions which make it act like a dictionary with multiple keys for each tuple.)
@@ -35,19 +35,19 @@ def CompareNames(name1, name2):
 #======================================================================
 # Given a Retro_Name create a new tuple if needed or add it to an existing tuple
 def AddRetroName(name):
-    if len(fanacNameTuples)> 0:
-        for t in fanacNameTuples:
+    if len(g_fanacNameTuples)> 0:
+        for t in g_fanacNameTuples:
             if t.RetroName == name:
                 return  # Nothing to do -- it's already in there.
 
     # Now we check to see if a matching name is in it that has a blank RetroName.
-    for i in range(0, len(fanacNameTuples)):
-        if CompareNames(fanacNameTuples[i].FanacStandardName, name):
-            fanacNameTuples[i]=fanacNameTuples[i]._replace(RetroName=name)
+    for i in range(0, len(g_fanacNameTuples)):
+        if CompareNames(g_fanacNameTuples[i].FanacStandardName, name):
+            g_fanacNameTuples[i]=g_fanacNameTuples[i]._replace(RetroName=name)
             return
 
     # Nothing. So the last recoruse is simply to add a new tuple.
-    fanacNameTuples.append(FanacName(JoesName=None, FanacStandardName=None, DisplayName=None, RetroName=name))
+    g_fanacNameTuples.append(FanacName(JoesName=None, FanacStandardName=None, DisplayName=None, RetroName=name))
     return
 
 
@@ -60,12 +60,12 @@ def AddFanacDirectories(fanacDirs):
         return
 
     # This is being done to initialize fanacNameTuples, so make sure it';s empty
-    if fanacNameTuples != None and len(fanacNameTuples) > 0:
+    if g_fanacNameTuples != None and len(g_fanacNameTuples) > 0:
         print("***AddFanacDirectories tried to initialize an non-empty fanacNameTuples")
         return
 
     for name, dir in fanacDirs.Dict().items():
-        fanacNameTuples.append(FanacName(JoesName=None, DisplayName=None, FanacStandardName=name, RetroName=None))
+        g_fanacNameTuples.append(FanacName(JoesName=None, DisplayName=None, FanacStandardName=name, RetroName=None))
 
     return
 
@@ -73,7 +73,7 @@ def AddFanacDirectories(fanacDirs):
 #=====================================================================
 # This checks for an exact match of the Fanac Standard name
 def ExistsFanacStandardName(name):
-    for nt in fanacNameTuples:
+    for nt in g_fanacNameTuples:
         if nt.FanacStandardName.lower() == name.lower():
             return True
     return False
@@ -82,8 +82,8 @@ def ExistsFanacStandardName(name):
 #=====================================================================
 # This checks for an exact match of the Fanac Standard name
 def LocateFanacStandardName(name):
-    for i in range(0, len(fanacNameTuples)):
-        if fanacNameTuples[i].FanacStandardName.lower() == name.lower():
+    for i in range(0, len(g_fanacNameTuples)):
+        if g_fanacNameTuples[i].FanacStandardName.lower() == name.lower():
             return i
     return None
 
@@ -96,30 +96,30 @@ def AddJoesName(jname):
 
     i=LocateFanacStandardName(jname)
     if i != None:
-        fanacNameTuples[i]=fanacNameTuples[i]._replace(JoesName=jname)
+        g_fanacNameTuples[i]=g_fanacNameTuples[i]._replace(JoesName=jname)
         return
 
     # Try moving a leading "The " to the end
     if jname.lower().startswith("the "):
         i=LocateFanacStandardName(jname[4:]+", The")
         if i != None:
-            fanacNameTuples[i]=fanacNameTuples[i]._replace(JoesName=jname)
+            g_fanacNameTuples[i]=g_fanacNameTuples[i]._replace(JoesName=jname)
             return
 
     # Try adding a trailing ", the" since sometimes Joe's list omits this
     i=LocateFanacStandardName(jname+", the")
     if i!= None:
-        fanacNameTuples[i]=fanacNameTuples[i]._replace(JoesName=jname)
+        g_fanacNameTuples[i]=g_fanacNameTuples[i]._replace(JoesName=jname)
         return
 
     # If none of this works, add a new entry
     # Deal with a potential leading "The "
     if jname.lower().startswith("the "):
-        fanacNameTuples.append(FanacName(JoesName=jname, DisplayName=None, FanacStandardName=jname+", The", RetroName=None))
+        g_fanacNameTuples.append(FanacName(JoesName=jname, DisplayName=None, FanacStandardName=jname+", The", RetroName=None))
         return
 
     # Just add it as-is
-    fanacNameTuples.append(FanacName(JoesName=jname, DisplayName=None, FanacStandardName=jname, RetroName=None))
+    g_fanacNameTuples.append(FanacName(JoesName=jname, DisplayName=None, FanacStandardName=jname, RetroName=None))
 
 
 #======================================================================
@@ -130,11 +130,11 @@ def AddFanzineStandardName(name):
     #     fanacNameTuples=FanacName(None, None, None, name, None)
     #     return fanacNameTuples
 
-    for t in fanacNameTuples:
+    for t in g_fanacNameTuples:
         if t.FanacStandardName == name:
-           return fanacNameTuples
+           return g_fanacNameTuples
 
-    fanacNameTuples.append(FanacName(JoesName=None, DisplayName=None, FanacStandardName=name, RetroName=None))
+    g_fanacNameTuples.append(FanacName(JoesName=None, DisplayName=None, FanacStandardName=name, RetroName=None))
     return
 
 
@@ -147,26 +147,26 @@ def StandardizeName(name):
         name=name[4:]+", The"
 
     # First see if it is in the list of standard names
-    for nt in fanacNameTuples:
+    for nt in g_fanacNameTuples:
         if nt.FanacStandardName != None and Helpers.CompareCompressedName(nt.FanacStandardName, name):
             return nt.FanacStandardName
 
     # Now check other forms.
-    for nt in fanacNameTuples:
+    for nt in g_fanacNameTuples:
         if nt.RetroName != None and Helpers.CompareCompressedName(nt.RetroName, name):
             if nt.FanacStandardName != None:
                 return nt.FanacStandardName
             else:
                 return "StandardizeName("+name+") failed"
 
-    for nt in fanacNameTuples:
+    for nt in g_fanacNameTuples:
         if nt.JoesName != None and Helpers.CompareCompressedName(nt.JoesName, name):
             if nt.FanacStandardName != None:
                 return nt.FanacStandardName
             else:
                 return "StandardizeName("+name+") failed"
 
-    for nt in fanacNameTuples:
+    for nt in g_fanacNameTuples:
         if nt.DisplayName != None and Helpers.CompareCompressedName(nt.DisplayName, name):
             if nt.FanacStandardName != None:
                 return nt.FanacStandardName

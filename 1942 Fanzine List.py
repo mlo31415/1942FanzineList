@@ -6,10 +6,28 @@ import FanacNames
 import FanacOrgReaders
 import RetroHugoReaders
 
+#--------------------------------------
+# Overall Strategy
+# (1) Read fanac.org's fanzine index pages to get a list of all the fanzines represented including name and directory name.  (We don't at this time read the actual data.)
+#       FanacOrgReaders.ReadClassicModernPages()
+# (2) Read Joe's list of all 1942 fanzines.  This includes information on what fanzines are eligible for the 1942 Retro Hugo
+#   We add those names to the fanzine dictionary, also.
+#   We create a list of all 1942 fanzines including issue info.
+#       allFanzines1942=RetroHugoReaders.Read1942FanzineList()
+# (3) Read a list of links to individual fanzines not on fanac.org
+#       FanacOrgReaders.ReadExternalLinks1942Txt()
+# (4) Go through the fanzines directories on fanac.org, and get a list of issues present, including the links to the scans
+#     This also loads the table of fanac.org directory index.html types
+#       FanacOrgReaders.ReadFanacFanzineIssues(FanacOrgReaders.g_FanacDirectories)
+# (5) Combine the information into a single grand table of fanzines which includes links to the issues
+# (6) Go through Joe's list and try to interpret the issue designations and match them with other sources
+# (7) Generate the output HTML
+#--------------------------------------
+
 # Create the list of FanacName tuples which will be used by FanacName functions
 # Note: This is just to get the names and directories, nothing else.
 FanacOrgReaders.ReadClassicModernPages()
-FanacNames.AddFanacDirectories(FanacOrgReaders.g_FanacDirectories)
+FanacNames.AddFanacDirectories(FanacOrgReaders.g_FanacDirectories)      # Add them to g_fanacNameTuples, which is managed and accessed by FanacNames
 
 # Read Joe's PDF and create a list of tuples, each representing one of the complete set of fanzines of 1942
 # The three items of the tuple are the fanzine name, the fanzine editors, andf the fanzine issue data.
@@ -20,7 +38,7 @@ allFanzines1942=RetroHugoReaders.Read1942FanzineList()
 FanacOrgReaders.ReadExternalLinks1942Txt()
 
 # Read the fanac.org fanzine direcgtory and produce a lost of all issues present
-FanacOrgReaders.ReadFanacFanzineIssues(FanacOrgReaders.g_FanacDirectories)
+FanacOrgReaders.ReadFanacFanzineIssues()
 
 #============================================================================================
 print("----Begin combining information into one table.")

@@ -3,17 +3,10 @@ import requests
 import collections
 import Helpers
 import FanacNames
-import RetroHugoReaders
 import re
 
 global g_FanacFanzineDirectoryFormats
 g_FanacFanzineDirectoryFormats=None
-
-# # This is a dictionary of all fanzines on fanac.org. The key is the fanzines name, the value is the directory name
-# global fanacDirectories
-# fanacDirectories={}
-
-FanacName=collections.namedtuple("FanacName", "FanacDirName, JoesName, DisplayName, FanacIndexName, RetroName")
 
 class FanacDirectories:
 
@@ -251,7 +244,7 @@ def ReadAndAppendFanacFanzineIndexPage(fanzineName, directoryUrl, format, fanzin
 
 
 # ============================================================================================
-def ReadFanacFanzineIssues(fanzinesList):
+def ReadFanacFanzineIssues():
     # Read index.html files on fanac.org
     # We have a dictionary containing the names and URLs of the 1942 fanzines.
     # The next step is to figure out what 1942 issues of each we have on the website
@@ -266,7 +259,7 @@ def ReadFanacFanzineIssues(fanzinesList):
 
     global g_fanacIssueInfo
     g_fanacIssueInfo=[]
-    for key, (title, dirname) in fanzinesList.Dict().items():
+    for key, (title, dirname) in g_FanacDirectories.Dict().items():
 
         # Get the index file format for this directory
         try:

@@ -62,20 +62,10 @@ for i in range(0, len(allFanzines1942)):
     # We want to look up the entries from Joe's list and see if they are on it.
     name=None
     url=None
-    if FanacOrgReaders.FanacDirectories().Contains(jname):
-        name, url=FanacOrgReaders.FanacDirectories().GetTuple(jname)
+    tpl=FanacOrgReaders.FanacDirectories().GetTuple(jname)
+    if tpl != None:
+        name, url=tpl
         print("   Found (1): "+name +" --> " + url)
-
-    # Try adding a trailing ", the" since sometimes Joe's list omits this
-    elif FanacOrgReaders.FanacDirectories().Contains(jname+", the"):
-        name, url = FanacOrgReaders.FanacDirectories().GetTuple(jname+", the")
-        print("   Found (2 -- add ', the'): " + name + " --> " + url)
-
-    # Try compressing blanks out
-    elif FanacOrgReaders.FanacDirectories().Contains(jname.replace(" ", "")):
-        name, url=FanacOrgReaders.FanacDirectories().GetTuple(jname.replace(" ", ""))
-        print("   Found (3 -- remove blanks): " + name + " --> "+url)
-
     else:
         print("   Not found in g_FanacDirectories: "+jname)
 
@@ -85,7 +75,7 @@ for i in range(0, len(allFanzines1942)):
     else:
         allFanzines1942[i]=ExpandedData(Name=fanzine.Name, Editor=fanzine.Editor, Stuff=fanzine.Stuff, IsHugoEligible=isHugoEligible, FanacDirName=None, FanacFanzineName=None, URL=None, Issues=None)
 
-del fanzine, jname, name, url, i, isHugoEligible
+del fanzine, jname, name, url, i, isHugoEligible, tpl
 print("----Done combining information into one table.")
 
 

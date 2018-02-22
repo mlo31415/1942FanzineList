@@ -9,7 +9,9 @@ global g_FanacFanzineDirectoryFormats
 g_FanacFanzineDirectoryFormats=None
 
 # ===============================================================================
-global g_FanacDirectories
+# This is a class to manage the list of fanzine directories in fanac.org
+
+global g_FanacDirectories   # This is global to share a single instance of the data among all instances of the class, *not* to allow access except through class members
 g_FanacDirectories={}
 
 class FanacDirectories:
@@ -88,7 +90,7 @@ class FanacDirectories:
                     print("   Added to g_FanacDirectories: "+name+" + "+dirname)
         return
 
-# End of class FanacDirectories:
+# End of class FanacDirectories
 
 
 

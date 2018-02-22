@@ -172,8 +172,18 @@ def CompareIssueSpec(name1, vol1, num1, name2, vol2, num2):
 
 #==================================================================================
 # Create a name for comparison purposes which is lower case and without whitespace or punctuation
+# We make it all lower case
+# We move leading "The ", "A " and "An " to the rear
+# We remove spaces and certain punctuation
 def CompressName(name):
-    return name.lower().replace(" ", "").replace(",", "").replace("-", "").replace("'", "").replace(".", "").replace("’", "")
+    name=name.lower()
+    if name.startswith("the "):
+        name=name[:4]+"the"
+    if name.startswith("a "):
+        name=name[:2]+"a"
+    if name.startswith("an "):
+        name=name[:3]+"an"
+    return name.replace(" ", "").replace(",", "").replace("-", "").replace("'", "").replace(".", "").replace("’", "")
 
 
 #==================================================================================

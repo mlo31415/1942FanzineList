@@ -181,6 +181,8 @@ class IssueSpec:
         self.Vol=None
         self.Num=None
         self.Whole=None
+        self.UninterpretableText=None
+        self.TrailingGarbage=None
 
     def Set2(self, v, n):
         self.Vol=v
@@ -191,7 +193,18 @@ class IssueSpec:
         self.Whole=w
         return self
 
+    def SetGarbage(self, str):
+        self.UninterpretableText=str
+        return self
+
+    def SetTrailingGarbage(self, str):
+        self.TrailingGarbage=str
+        return self
+
     def Print(self):
+        if self.UninterpretableText != None:
+            return "IS("+self.UninterpretableText+")"
+
         v="-"
         if self.Vol != None:
             v=str(self.Vol)
@@ -202,7 +215,10 @@ class IssueSpec:
         if self.Whole != None:
             w=str(self.Whole)
 
-        return "IS(V"+v+", N"+n+", W"+w+")"
+        s="IS(V"+v+", N"+n+", W"+w
+        if self.TrailingGarbage != None:
+            s=s+", "+self.TrailingGarbage
+        return s+")"
 
 
 class IssueSpecList:
@@ -214,7 +230,7 @@ class IssueSpecList:
 
     def Append2(self, vol, issuelist):
         for i in issuelist:
-            self.Append(self, IssueSpec(vol, i))
+            self.Append(IssueSpec().Set2(vol, i))
 
     def Append(self, isl):
         self.list.extend(isl)

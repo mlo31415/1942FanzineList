@@ -159,6 +159,16 @@ for i in range(0, len(allFanzines1942)):
                     issueSpecList.Append([FanacNames.IssueSpec().Set1(int(stuff))])
                     stuff=""
             except:
+                # If we encounter an open parenthesis, it and its contents are treated as uninterpretable text
+                stuff=stuff.strip()
+                if stuff[0] == "(":
+                    # Find closing ")"
+                    loc=stuff.find(")")
+                    if loc > 0:
+                        specStr=stuff[:loc]
+                        stuff=stuff[loc+1:]
+                        issueSpecList.Append1(FanacNames.IssueSpec().SetGarbage(specStr))
+                        continue
                 stuff=""    # TODO: Should try to recover so any later specs can be interpreted
                 continue
 

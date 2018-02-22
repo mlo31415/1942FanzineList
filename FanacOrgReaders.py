@@ -375,7 +375,8 @@ def FormatStuff(fz):
         if issue.Vol == None and issue.Num == None and issue.Whole == None:     # We have neither Vol nor Num.  We have no issue information.
             v="(oops)"
 
-        # We shoould either habe a Whole (number) or a Vol+Num
+        # We shoould either have a Whole (number) or a Vol+Num
+        # TODO: Add support for UninterpretableText and TrailingGarbage
         elif issue.Whole != None:     # We have Num, but not Vol
             # Look up the fanzine to see if it is on fanac.org. Then look up the Vol/Issue to see if the specific issue is there.
             name = fz.FanacFanzineName or fz.Name

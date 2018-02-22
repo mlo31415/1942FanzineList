@@ -15,7 +15,7 @@ import RetroHugoReaders
 #   We create a list of all 1942 fanzines including issue info.
 #       allFanzines1942=RetroHugoReaders.Read1942FanzineList()
 # (3) Read a list of links to individual fanzines not on fanac.org
-#       FanacOrgReaders.ReadExternalLinks1942Txt()
+#       Done in code when ExternalLinks class is instantiated
 # (4) Go through the fanzines directories on fanac.org, and get a list of issues present, including the links to the scans
 #     This also loads the table of fanac.org directory index.html types
 #       FanacOrgReaders.ReadFanacFanzineIssues(FanacOrgReaders.g_FanacDirectories)
@@ -34,8 +34,6 @@ FanacNames.AddFanacDirectories(FanacOrgReaders.g_FanacDirectories)      # Add th
 # Some of this is pretty rough, being taken from somewhat inconsistant text in the PDF.
 # This will also add any new names found to the FanacNames tuples
 allFanzines1942=RetroHugoReaders.Read1942FanzineList()
-
-FanacOrgReaders.ReadExternalLinks1942Txt()
 
 # Read the fanac.org fanzine direcgtory and produce a lost of all issues present
 FanacOrgReaders.ReadFanacFanzineIssues()

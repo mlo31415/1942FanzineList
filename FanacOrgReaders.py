@@ -307,36 +307,44 @@ def ReadFanacFanzineIssues():
     print("----Done reading index.html files on fanac.org")
     return
 
-g_externalLinks1942="dog"   # Just a value to create the variable which can't ever be real
+#------------------------------------------------------------------------
+# This is a class which will always return the External Links table.
+# It will read it the first time it is initialized and thereafter just return it.
+# Usage: x=ExternalClass().List()
+global g_externalLinks1942
+g_externalLinks1942=[]
 
-#============================================================================================
-def ReadExternalLinks1942Txt():
-    print("----Begin reading External Links 1942.txt")
-    # Now we read Links1942.txt, which contains links to issues of fanzines *outside* fanac.org.
-    # It's organized as a table, with the first row a ';'-delimited list of column headers
-    #    and the remaining rows are each a ';'-delimited pointer to an exteral fanzine
-    # First read the header line which names the columns.  The headers are separated from ';", so we need to remove these.
-    f=open("External Links 1942.txt")
-    line=f.readline()
-    line=line.replace(";", "")
-    links1942ColNames=line.split(" ")
-    # Define a named tuple to hold the data I get from the external links input file
-    # This -- elegantly -- defines a named tuple to hold the elements of a line and names each element according to the column header in the first row.
-    ExternalLinksData=collections.namedtuple("ExternalLinksData", line)
+class ExternalLinks:
+    import collections
+    def __init__(self):
+        import collections
+        global g_externalLinks1942
+        if len(g_externalLinks1942) == 0:
+            print("----Begin reading External Links 1942.txt")
+            # Now we read Links1942.txt, which contains links to issues of fanzines *outside* fanac.org.
+            # It's organized as a table, with the first row a ';'-delimited list of column headers
+            #    and the remaining rows are each a ';'-delimited pointer to an exteral fanzine
+            # First read the header line which names the columns.  The headers are separated from ';", so we need to remove these.
+            f=open("External Links 1942.txt")
+            line=f.readline()
+            line=line.replace(";", "")
+            links1942ColNames=line.split(" ")
+            # Define a named tuple to hold the data I get from the external links input file
+            # This -- elegantly -- defines a named tuple to hold the elements of a line and names each element according to the column header in the first row.
+            ExternalLinksData=collections.namedtuple("ExternalLinksData", line)
 
-    # Now read the rest of the data.
-    global g_externalLinks1942
-    g_externalLinks1942=[]
-    for line in f:  # Each line after the first is a link to an external fanzine
-        print("   line="+line)
-        temp=line.split(";")
-        t2=[]
-        for t in temp:
-            t2.append(t.strip())
-        g_externalLinks1942.append(ExternalLinksData(*tuple(t2)))  # Turn the list into a named tuple.
-    f.close()
-    print("----Done reading External Links 1942.txt")
-    return
+            # Now read the rest of the data.
+            for line in f:  # Each line after the first is a link to an external fanzine
+                print("   line="+line.strip())
+                temp=line.split(";")
+                t2=[]
+                for t in temp:
+                    t2.append(t.strip())
+                g_externalLinks1942.append(ExternalLinksData(*tuple(t2)))  # Turn the list into a named tuple.
+            f.close()
+            print("----Done reading External Links 1942.txt")
+    def List(self):
+        return g_externalLinks1942
 
 
 #================================================================================================
@@ -344,7 +352,6 @@ def ReadExternalLinks1942Txt():
 # Stuff is commonly a list of issue specification interspersed with nonce items
 # For now, we'll attempt only to format what we interpret, above: whole numbers and Vol/# combinations
 def FormatStuff(fz):
-    global g_externalLinks1942
     ex=fz.Issues
     if ex == None or ex.len() == 0:
         return fz.Stuff
@@ -388,7 +395,7 @@ def FormatStuff(fz):
             # If we couldn't find anything on fanac.org, look for an external link
             if v == None:
                 # We have a name, and a whole number.  See if they turn up as an external link]
-                for ext in g_externalLinks1942:
+                for ext in ExternalLinks().List():
                     if FanacNames.CompareNames(ext.Title, name) and int(ext.Whole_Number) == issue.Whole:
                         url=ext.URL
                         print("   FormatStuff: Found external: issue="+str(issue.Whole)+"  url="+url)
@@ -420,7 +427,7 @@ def FormatStuff(fz):
             # If we couldn't find anything on fanac.org, look for an external link
             if v == None:
                 # We have a name, and a whole number.  See if they turn up as an external link]
-                for ext in g_externalLinks1942:
+                for ext in ExternalLinks().List():
                     if Helpers.CompareIssueSpec(ext.Title, ext.Volume, ext.Number, name, issue.Vol, issue.Num):
                         url=ext.URL
                         print("   FormatStuff: Found external: Vol="+str(issue.Vol)+" issue="+str(issue.Num)+"  url="+url)

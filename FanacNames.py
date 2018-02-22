@@ -29,6 +29,22 @@ def CompareNames(name1, name2):
         name2=name2[4:]+", the"
         name2=name2.strip()
 
+    if name1.lower().startswith("a "):
+        name1=name1[2:]+", a"
+        name1=name1.strip()
+
+    if name2.lower().startswith("a "):
+        name2=name2[2:]+", a"
+        name2=name2.strip()
+
+    if name1.lower().startswith("an "):
+        name1=name1[3:]+", an"
+        name1=name1.strip()
+
+    if name2.lower().startswith("an "):
+        name2=name2[3:]+", an"
+        name2=name2.strip()
+
     return Helpers.CompressName(name1) == Helpers.CompressName(name2)
 
 
@@ -55,7 +71,7 @@ def AddRetroName(name):
 # Add the fanac directory dictionary to the names list
 #
 def AddFanacDirectories(fanacDirs):
-    if fanacDirs == None or fanacDirs.len == 0:
+    if fanacDirs == None or len(fanacDirs) == 0:
         print("***AddFanacDirectories tried to add an empty FanacOrgReaders.fanacDirectories")
         return
 
@@ -64,7 +80,7 @@ def AddFanacDirectories(fanacDirs):
         print("***AddFanacDirectories tried to initialize an non-empty fanacNameTuples")
         return
 
-    for name, dir in fanacDirs.Dict().items():
+    for name, dir in fanacDirs.items():
         g_fanacNameTuples.append(FanacName(JoesName=None, DisplayName=None, FanacStandardName=name, RetroName=None))
 
     return

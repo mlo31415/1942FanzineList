@@ -26,8 +26,7 @@ import RetroHugoReaders
 
 # Create the list of FanacName tuples which will be used by FanacName functions
 # Note: This is just to get the names and directories, nothing else.
-FanacOrgReaders.ReadClassicModernPages()
-FanacNames.AddFanacDirectories(FanacOrgReaders.g_FanacDirectories)      # Add them to g_fanacNameTuples, which is managed and accessed by FanacNames
+FanacNames.AddFanacDirectories(FanacOrgReaders.FanacDirectories().Dict())      # Add them to g_fanacNameTuples, which is managed and accessed by FanacNames
 
 # Read Joe's PDF and create a list of tuples, each representing one of the complete set of fanzines of 1942
 # The three items of the tuple are the fanzine name, the fanzine editors, andf the fanzine issue data.
@@ -63,18 +62,18 @@ for i in range(0, len(allFanzines1942)):
     # We want to look up the entries from Joe's list and see if they are on it.
     name=None
     url=None
-    if FanacOrgReaders.g_FanacDirectories.Contains(jname):
-        name, url=FanacOrgReaders.g_FanacDirectories.GetTuple(jname)
+    if FanacOrgReaders.FanacDirectories().Contains(jname):
+        name, url=FanacOrgReaders.FanacDirectories().GetTuple(jname)
         print("   Found (1): "+name +" --> " + url)
 
     # Try adding a trailing ", the" since sometimes Joe's list omits this
-    elif FanacOrgReaders.g_FanacDirectories.Contains(jname+", the"):
-        name, url = FanacOrgReaders.g_FanacDirectories.GetTuple(jname+", the")
+    elif FanacOrgReaders.FanacDirectories().Contains(jname+", the"):
+        name, url = FanacOrgReaders.FanacDirectories().GetTuple(jname+", the")
         print("   Found (2 -- add ', the'): " + name + " --> " + url)
 
     # Try compressing blanks out
-    elif FanacOrgReaders.g_FanacDirectories.Contains(jname.replace(" ", "")):
-        name, url=FanacOrgReaders.g_FanacDirectories.GetTuple(jname.replace(" ", ""))
+    elif FanacOrgReaders.FanacDirectories().Contains(jname.replace(" ", "")):
+        name, url=FanacOrgReaders.FanacDirectories().GetTuple(jname.replace(" ", ""))
         print("   Found (3 -- remove blanks): " + name + " --> "+url)
 
     else:

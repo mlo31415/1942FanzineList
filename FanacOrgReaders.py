@@ -81,7 +81,7 @@ def ReadModernOrClassicTable(url):
         if "sortable" in str(table.attrs) and not "navbar" in str(table.attrs):
             # OK, we've found the main table.  Now read it
             trs=table.find_all("tr")
-            for i in range(1, len(trs)-1):
+            for i in range(1, len(trs)):
                 # Now the data rows
                 name=trs[i].find_all("td")[1].contents[0].contents[0].contents[0]
                 dirname=trs[i].find_all("td")[1].contents[0].attrs["href"][:-1]

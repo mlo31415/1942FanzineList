@@ -1,7 +1,8 @@
 import os
 from bs4 import NavigableString
 import FanacNames
-
+from datetime import datetime
+import timestring as timestring
 
 #-----------------------------------------
 # Find text bracketed by <b>...</b>
@@ -28,7 +29,10 @@ def GetHrefAndTextFromTag(tag):
     try:
         href=tag.contents[0].attrs.get("href", None)
     except:
-        href=tag.attrs.get("href")
+        try:
+            href=tag.attrs.get("href")
+        except:
+            return tag, None
 
     return (tag.contents[0].string, href)
 
@@ -158,16 +162,17 @@ def FormatLink(name, url):
 
 
 #==================================================================================
-# Compare a filename, volume and number woith a second set
-def CompareIssueSpec(name1, vol1, num1, name2, vol2, num2):
+# Compare a filename, volume and number with a second set
+def CompareIssueSpec(name1, vol1, num1, whole1, name2, vol2, num2, whole2):
     if not FanacNames.CompareNames(name1, name2):
         return False
-    if (vol1 == None and vol2 != None) or (vol1 != None and vol2 == None):
-        return False
-    if vol1 != vol2:
+    if (vol1 != vol2):
         return False
     if num1 != num2:
         return False
+    if whole1 != whole2:
+        return False
+
     return True
 
 #==================================================================================
@@ -189,3 +194,156 @@ def CompressName(name):
 #==================================================================================
 def CompareCompressedName(n1, n2):
     return CompressName(n1) == CompressName(n2)
+
+
+# ===================================================================
+# Date-Time stuff
+
+# ----------------------------------------
+# Remove certain strings which amount to whitespace
+def RemoveDebris(str):
+    return str.replace("<br>", "").replace("<BR>", "")
+
+# ----------------------------------------
+def InterpretYear(yearstring):
+    yearstring=RemoveDebris(yearstring)
+    if len(yearstring) == 0:
+        return None
+    try:
+        year=int(yearstring)
+    except:
+        print("   ***Year conversion failed: '" + yearstring+"'")
+        year=None
+    return year
+
+
+# ----------------------------------------
+def InterpretDay(daystring):
+    daystring=RemoveDebris(daystring)
+    if len(daystring) == 0:
+        return None
+    try:
+        day=int(daystring)
+    except:
+        print("   ***Day conversion failed: '" + daystring+"'")
+        day=None
+    return day
+
+
+# ----------------------------------------
+def InterpretMonth(monthstring):
+    monthstring=RemoveDebris(monthstring)
+    if len(monthstring) == 0:
+        return None
+    monthConversionTable={"jan" : 1, "january" : 1, "1" : 1,
+                          "feb" : 2, "february" : 2, "2" : 2,
+                          "mar" : 3, "march" : 3, "3" : 3,
+                          "apr" : 4, "april" : 4, "4" : 4,
+                          "may" : 5, "5" : 5,
+                          "jun" : 6, "june" : 6, "6" : 6,
+                          "jul" : 7, "july" : 7, "7" : 7,
+                          "aug" : 8, "august" : 8, "8" : 8,
+                          "sep" : 9, "sept" : 9, "september" : 9, "9" : 9,
+                          "oct" : 10, "october" : 10, "10" : 10,
+                          "nov" : 11, "november" : 11, "11" : 11,
+                          "dec" : 12, "december" : 12, "12" : 12,
+                          "1q" : 1,
+                          "4q" : 4,
+                          "7q" : 7,
+                          "10q" : 10,
+                          "spring" : 4,
+                          "summer" : 7,
+                          "fall" : 10, "autumn" : 10,
+                          "winter" : 1,
+                          "january-february" : 2,
+                          "march-april" : 4,
+                          "april-may" : 5,
+                          "apr-may" : 5,
+                          "may-june" : 6,
+                          "july-august" : 8,
+                          "august-september" : 9,
+                          "september-october" : 10,
+                          "sep-oct" : 10,
+                          "october-november" : 11,
+                          "oct-nov" : 11,
+                          "september-december" : 12,
+                          "november-december" : 12,
+                          "december-january" : 12,
+                          "dec-jan" : 12}
+    try:
+        month=monthConversionTable[monthstring.replace(" ", "").lower()]
+    except:
+        print("   ***Month conversion failed: "+monthstring)
+        month=None
+    return month
+
+# ----------------------------------------
+# Interpret a free-form date string
+# We will assume no time information
+def InterpretDateString(datestring):
+    # We will try a series of possible formats
+    try:
+        return timestring.date(datestring)
+    except:
+        pass
+
+    try:
+        return int(datestring)  # Just a bare number.  It pretty much has to be a year.
+    except:
+        pass
+
+    try:
+        return datetime.strptime(datestring, '%b %Y')   # 'Jun 2005'
+    except:
+        pass
+
+    try:
+        return datetime.strptime(datestring, '%B %Y')   # 'June 2005'
+    except:
+        pass
+
+    try:
+        # Look at the case of exactly two tokens, and the second is a year-like number (E.g., June 1987)
+        d=datestring.split(" ")
+        try:
+            y=int(d[1])
+            m=InterpretMonth(d[0])
+            return datetime(y, m, 1)
+        except:
+            pass
+    except:
+        pass
+    return None
+
+
+# ----------------------------------------
+def CannonicizeColumnHeaders(header):
+    # 2nd item is the cannonical form
+    translationTable={"title" : "title",
+                      "issue" : "issue",
+                      "month" : "month",
+                      "mo." : "month",
+                      "day" : "day",
+                      "year" : "year",
+                      "repro" : "repro",
+                      "editor" : "editor",
+                      "editors" : "editor",
+                      "notes" : "notes",
+                      "pages" : "pages",
+                      "page" : "pages",
+                      "size" : "size",
+                      "type" : "type",
+                      "#" : "#",
+                      "no" : "#",
+                      "number" : "#",
+                      "vol" : "vol",
+                      "volume" : "vol",
+                      "num" : "num",
+                      "headline" : "headline",
+                      "publisher" : "publisher",
+                      "published" : "date"}
+    try:
+        return translationTable[header.replace(" ", "").lower()]
+    except:
+        print("   ***Column Header conversion failed: '" + header + "'")
+        return None

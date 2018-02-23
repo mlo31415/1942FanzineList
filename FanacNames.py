@@ -116,6 +116,7 @@ def AddJoesName(jname):
         return
 
     # Try moving a leading "The " to the end
+    # TODO: use the names class to deal with this
     if jname.lower().startswith("the "):
         i=LocateFanacStandardName(jname[4:]+", The")
         if i != None:

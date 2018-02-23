@@ -48,9 +48,15 @@ class FanacDirectories:
         return Helpers.CompressName(name) in g_FanacDirectories
 
     def GetTuple(self, name):
-        if not self.Contains(name):
-            return None
-        return g_FanacDirectories[Helpers.CompressName(name)]
+        if self.Contains(name):
+            return g_FanacDirectories[Helpers.CompressName(name)]
+        if self.Contains(name+"the"):
+            return g_FanacDirectories[Helpers.CompressName(name+"the")]
+        if self.Contains(name+"an"):
+            return g_FanacDirectories[Helpers.CompressName(name+"an")]
+        if self.Contains(name+"a"):
+            return g_FanacDirectories[Helpers.CompressName(name+"a")]
+        return None
 
     def len(self):
         return len(g_FanacDirectories)
@@ -87,7 +93,6 @@ class FanacDirectories:
                     name=trs[i].find_all("td")[1].contents[0].contents[0].contents[0]
                     dirname=trs[i].find_all("td")[1].contents[0].attrs["href"][:-1]
                     self.AddDirectory(name, dirname)
-                    print("   Added to g_FanacDirectories: "+name+" + "+dirname)
         return
 
 # End of class FanacDirectories
@@ -177,68 +182,121 @@ def ReadAndAppendFanacFanzineIndexPage(fanzineName, directoryUrl, format, fanzin
     tab.contents=Helpers.RemoveNewlineRows(tab.contents)
 
     # Ok. We have the table.  Make a list of the column headers. We need to compress the newlines out of this as well
-    tableHeader = Helpers.RemoveNewlineRows(tab.contents[0])
-    columnHeaders = []
-    for col in tableHeader:
-        columnHeaders.append(col.string)
+    # The first row of the table contains the table header
+    tableRow = Helpers.RemoveNewlineRows(tab.contents[0])
+    chl=[]
+    for col in tableRow:
+        chl.append(col.string.replace(" ",""))      # Can't have internal spaces
+    columnHeaders=" ".join(chl)
+    print("   columnHeaders="+columnHeaders)
+    del chl
 
-    # We want to append just the rows for 1942
-    # Note that the dates aren't especially consistent, either, so we have to do some searching
-    # What column contains the year?
+    # Remove some sloppy column header stuff and characters that are OK, but which can't be in Namedtuple field names
+    columnHeaders=columnHeaders.replace("Vol/#", "VolNum").replace("Vol./#", "VolNum")
+    columnHeaders=columnHeaders.replace("#", "Num")
+    columnHeaders=columnHeaders.replace("/", "").replace("Mo.", "Month").replace("Pp.", "Pages")
+    # And can you believe duplicate column headers?
+    if len(columnHeaders.split(" Number "))>2:
+        columnHeaders=columnHeaders.replace(" Number ", " Whole ", 1) # If Number appears twice, replace the first with Whole
 
-    yearCol=Helpers.FindIndexOfStringInList(columnHeaders, "Year")
-    issueCol=Helpers.FindIndexOfStringInList(columnHeaders, "Issue")
-    titleCol=Helpers.FindIndexOfStringInList(columnHeaders, "Title")
-    if issueCol == None:
-        issueCol=titleCol
-
-    # If there's no yearCol or issueCol, just print a message and go on to the next fanzine
-    if yearCol == None:
-        print("       No yearCol found")
-        return None
-    if issueCol == None:
-        print("       No issueCol found")
-        return None
+    FanzineTable=collections.namedtuple("FanzineTable", columnHeaders)
 
     # What's left is one or more rows, each corresponding to an issue of that fanzine.
     # We build up a list of lists.  Each list in the list of lists is a row
     # We have to treat the Title column specially, since it contains the critical href we need.
-    rows=[]
+    fanzineTable=[]
     for i in range(1, len(tab)):
         tableRow=Helpers.RemoveNewlineRows(tab.contents[i])
-        FanzineInfo=collections.namedtuple("FanzineInfo", "Name, URL, Year, Vol, Num")
+        r=[]
+        for j in range(0, len(tableRow)):
+            try:        # If the tag contains an href, we save the tag/.  Otherwise, just the text
+                tableRow[j].contents[0].attrs.get("href", None)
+                r.append(tableRow[j])
+            except:
+                r.append(tableRow[j].text)
+        print("   row=" + str(r))
+        fanzineTable.append(FanzineTable(*r))
+
+    # Now we have the entire fanzine table stored in fanzineTable
+    # We need to extract the name, url, year, and vol/issue info for each fanzine
+    FanzineInfo=collections.namedtuple("FanzineInfo", "Name, URL, Year, Vol, Num")  # Define a named tuple to hold the info
+
+    # We have to treat the Title column specially, since it contains the critical href we need.
+    rows=[]
+    for row in fanzineTable:
+
+        # Figure out how to get a year
+        # There may be a year column or there may be a date column
+        year=None
+        try:
+            if "Year" in row._fields:
+                year=int(row.Year)
+            elif "Date" in row._fields:
+                date=Helpers.InterpretDateString(row.Date)
+                if date != None:
+                    year=date.Year
+        except:
+            year=None   # Gotta have *some* code in the except clause
+
+        if year == None:
+            print("   ***Can't find year")
+            continue
+
+        # Now find the column containing the issue designation. It could be "Issue" or "Title"
+        issueCol=None
+        for i in range(0, len(row._fields)):
+            if row._fields[i] == "Issue":
+                issueCol= i
+                break
+        if issueCol == None:
+            for i in range(0, len(row._fields)):
+                if row._fields[i]=="Title":
+                    issueCol=i
+                    break
+        if issueCol == None:
+            print("  ***No IssueCol")
+            continue
 
         # Now for code which depends on the index,html file format
         if format[0] == 0 and format[1] == 0:   # The default case
 
             # Get the num from the name
-            href=Helpers.GetHrefAndTextFromTag(tableRow[issueCol])
-            temp=str(href[0])
+            name, href=Helpers.GetHrefAndTextFromTag(row[issueCol])
+            if href == None:
+                print("    skipping: "+name)
+                continue
+
             p=re.compile("^.*\D([0-9]+)\s*$")
-            m=p.match(temp)
+            m=p.match(name)
             num=None
             if m != None and len(m.groups()) == 1:
                 num=int(m.groups()[0])
 
-            row=FanzineInfo(Name=href[0], URL=href[1], Year=tableRow[yearCol].string, Vol=None, Num=num)    # (We ignore the Vol and Num for now.)
-            rows.append(row)
+            fi=FanzineInfo(Name=name, URL=href, Year=year, Vol=None, Num=num)    # (We ignore the Vol and Num for now.)
+            print("   (0,0): "+str(fi))
+            rows.append(fi)
 
         elif format[0] == 1 and format[1] == 6: # The name in the title column ends in V<n>, #<n>
 
             # We need two things: The contents of the first (linking) column and the year.
-            name, href=Helpers.GetHrefAndTextFromTag(tableRow[issueCol])
+            name, href=Helpers.GetHrefAndTextFromTag(row[issueCol])
+            if href==None:
+                print("    skipping: "+name)
+                continue
+
             p=re.compile("(.*)V([0-9]+),?\s*#([0-9]+)\s*$")
             m=p.match(name)
             if m != None and len(m.groups()) == 3:
-                row=FanzineInfo(Name=fanzineName, URL=href, Year=tableRow[yearCol].string, Vol=int(m.groups()[1]), Num=int(m.groups()[2]))
-                rows.append(row)
+                fi=FanzineInfo(Name=fanzineName, URL=href, Year=year, Vol=int(m.groups()[1]), Num=int(m.groups()[2]))
+                print("   (1,6): "+str(fi))
+                rows.append(fi)
 
 
 #     FanacIssueInfo=collections.namedtuple("FanacIssueInfo", "FanzineName, IssueName, Vol, Number, URL")
 
     # Now select just the fanzines for 1942 and append them to the fanzineIssueList
     for row in rows:
-        if row.Year == "1942":
+        if row.Year == 1942:
             print("      "+str(row))
             issue=FanacIssueInfo(FanzineName=fanzineName, URL=row.URL, Number=row.Num, Vol=row.Vol, IssueName=None)
             print("      1942: ReadAndAppendFanacFanzineIndexPage: appending "+str(issue))
@@ -264,33 +322,31 @@ def ReadFanacFanzineIssues():
     global g_fanacIssueInfo
     g_fanacIssueInfo=[]
     for key, (title, dirname) in FanacDirectories().Dict().items():
+        print("'"+key+"', "+title+"', "+dirname+"'")
+        if '/' in dirname:
+            print("   skipped because of '/' in name:"+dirname)
+            continue
 
         # Get the index file format for this directory
         try:
             dn=dirname.lower()
-            if '/' in dirname:
-                print("   skipped because of '/' in name:"+dirname)
-                continue
+
             fmt=g_FanacFanzineDirectoryFormats[dn]
             print("   Format: "+title+" --> "+FanacNames.StandardizeName(title.lower())+" --> "+str(fmt))
         except:
             print("   Format: "+title+" --> "+FanacNames.StandardizeName(title.lower())+" -->  (0, 0)")
             # This is actually a good thing, because it means that the fanzines has the default index.html type
-            print("   fanacFanzineDirectoryFormats["+title.lower()+"] not found")
-
-            if '/' in dirname:
-                print("   skipped because of '/' in name:"+dirname)
-                continue
+            print("   Using default directory format of (0,0)/(1,1)")
 
             # The URL we get is relative to the fanzines directory which has the URL fanac.org/fanzines
             # We need to turn relPath into a URL
             url=Helpers.RelPathToURL(dirname)
-            print(title, " ", url)
+            print("   '"+title+"', "+url+"'")
             if url == None:
                 continue
             if url.startswith("http://www.fanac.org") and not url.startswith("http://www.fanac.org//fan_funds") and not url.startswith("http://www.fanac.org/fanzines/Miscellaneous"):
                 ret=ReadAndAppendFanacFanzineIndexPage(title, url, (0, 0, None), g_fanacIssueInfo)
-                if ret!=None:
+                if ret != None:
                     g_fanacIssueInfo=ret
             continue
 
@@ -304,7 +360,7 @@ def ReadFanacFanzineIssues():
         print(title, " ", url)
         if url.startswith("http://www.fanac.org") and not url.startswith("http://www.fanac.org//fan_funds"):
             ret=ReadAndAppendFanacFanzineIndexPage(title, url, fmt, g_fanacIssueInfo)
-            if ret!=None:
+            if ret != None:
                 g_fanacIssueInfo=ret
 
     # Now we have a list of all the issues of fanzines onfanac.org which have at least one 1942 issue.(Not all of the issues are 1942.)
@@ -356,16 +412,14 @@ class ExternalLinks:
 # Stuff is commonly a list of issue specification interspersed with nonce items
 # For now, we'll attempt only to format what we interpret, above: whole numbers and Vol/# combinations
 def FormatStuff(fz):
-    ex=fz.Issues
-    if ex == None or ex.len() == 0:
+    if fz.Issues == None or fz.Issues.len() == 0:
         return fz.Stuff
 
     print("   FormatStuff: fz.Name="+str(fz.Name)+"  fz.FanacDirName="+str(fz.FanacDirName)+"   fz.Stuff="+fz.Issues.Print())
 
     out=""
-    # "ex" is a list of issues for one specific fanzine.
     # Our job here is to turn this into HTML which includes links for those issues which have links.
-    for issue in ex.List():
+    for issue in fz.Issues.List():
         # issue is a tuple of a vol and a num.
         # If both exists, it is a Vn#n pair
         # If V is none, then num is a whole number.
@@ -379,7 +433,7 @@ def FormatStuff(fz):
         if issue.Vol == None and issue.Num == None and issue.Whole == None:     # We have neither Vol nor Num.  We have no issue information.
             v="(oops)"
 
-        # We shoould either have a Whole (number) or a Vol+Num
+        # We should either have a Whole (number) or a Vol+Num
         # TODO: Add support for UninterpretableText and TrailingGarbage
         elif issue.Whole != None:     # We have Num, but not Vol
             # Look up the fanzine to see if it is on fanac.org. Then look up the Vol/Issue to see if the specific issue is there.
@@ -388,7 +442,13 @@ def FormatStuff(fz):
             # Check the table of all fanzines issues on fanac.org to see if there is a match for fanzine-vol-issue
             url=None
             for fii in g_fanacIssueInfo:
-                if Helpers.CompareIssueSpec(fii.FanzineName, fii.Vol, fii.Number, name, None, issue.Whole):
+                if fii.Vol != None:
+                    n=fii.Number
+                    w=None
+                else:
+                    n=None
+                    w=fii.Number
+                if Helpers.CompareIssueSpec(fii.FanzineName, fii.Vol, n, w, name, None, None, issue.Whole):
                     url=fii.URL
                     text=str(issue.Whole)
                     print("   FormatStuff: Found on fanac: issue="+str(issue.Whole)+"  url="+url)
@@ -411,6 +471,9 @@ def FormatStuff(fz):
             if v == None:
                 # No luck anywhere
                 v="#"+str(issue.Whole)
+                print("   No luck anywhere: "+v)
+
+
 
         else:
             # We don't have issue.Whole, so we must have both vol and num
@@ -420,7 +483,13 @@ def FormatStuff(fz):
             # Check the table of all fanzines issues on fanac.org to see if there is a match for fanzine-vol-issue
             url=None
             for fii in g_fanacIssueInfo:
-                if Helpers.CompareIssueSpec(fii.FanzineName, fii.Vol, fii.Number, name, issue.Vol, issue.Num):
+                if fii.Vol != None:
+                    n=fii.Number
+                    w=None
+                else:
+                    n=None
+                    w=fii.Number
+                if Helpers.CompareIssueSpec(fii.FanzineName, fii.Vol, n, w, name, issue.Vol, issue.Num, issue.Whole):
                     url=fii.URL
                     text=str(issue.Num)
                     print("   FormatStuff: Found on fanac: vol="+str(issue.Vol)+" issue="+str(issue.Num)+"  url="+url)
@@ -433,7 +502,13 @@ def FormatStuff(fz):
             if v == None:
                 # We have a name, and a whole number.  See if they turn up as an external link]
                 for ext in ExternalLinks().List():
-                    if Helpers.CompareIssueSpec(ext.Title, ext.Volume, ext.Number, name, issue.Vol, issue.Num):
+                    if ext.Volume != None:
+                        n=fii.Number
+                        w=None
+                    else:
+                        n=None
+                        w=fii.Number
+                    if Helpers.CompareIssueSpec(ext.Title, ext.Volume, n, w, name, issue.Vol, issue.Num, issue.Whole):
                         url=ext.URL
                         print("   FormatStuff: Found external: Vol="+str(issue.Vol)+" issue="+str(issue.Num)+"  url="+url)
                         if url!=None:
@@ -442,6 +517,7 @@ def FormatStuff(fz):
             if v == None:
                 # No luck anywhere, so no link: just text
                 v="V"+str(issue.Vol)+"#"+str(issue.Num)
+                print("   No luck anywhere: "+v)
 
         if len(out) > 0:
             out=out+", "

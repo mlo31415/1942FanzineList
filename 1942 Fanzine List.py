@@ -85,7 +85,6 @@ print("----Begin decoding issue list in list of all 1942 fanzines")
 IssueNumber=collections.namedtuple("IssueNumber", "Vol Num")
 
 # OK, now the problem is to decode the crap at the end to form a list of issue numbers...or something...
-# We'll start by trying to recognize *just* the case where we have a comma-separated list of numbers and nothing else.
 for i in range(0, len(allFanzines1942)):
     fz=allFanzines1942[i]
     print("   Decoding issue list: "+ str(fz))
@@ -93,7 +92,7 @@ for i in range(0, len(allFanzines1942)):
     stuff=fz.Stuff
     if stuff == None:    # Skip empty stuff
         continue
-    if len("".join(stuff.split())) == 0: # Compress out whitespace and skip if it's all whitespace
+    if len("".join(stuff.split())) == 0: # Skip if it's all whitespace by splitting on whitespace, joining the remnants and counting the remaining characters
         continue
 
     # Turn all multiple spaces into a single space
@@ -106,13 +105,18 @@ for i in range(0, len(allFanzines1942)):
     #   V1#2, V3#4
     #   V1#2,3 or V1:2,3
     #   Sometimes a semicolon is used as a separator....
-    #   They can be intermixed.  This causes a problem because the comma winds up having different meanings in different cases.
-    # And sometimes there is odd stuff tossed in which can't be interpreted.
+    #   The different representations can be intermixed.  This causes a problem because the comma winds up having different meanings in different cases.
+    #   Stuff in parentheses will always be treated as comments
+    #   Trailing '?' will be ignored
+    #   And sometimes there is odd stuff tossed in which can't be interpreted.
 
-    while len(stuff) > 0:      # We'll whittle stuff down as we interpret it.
-        # If we begin with a "V", we have either a volume-issue pair or a volume followed by a related list of issues
-        # We can distinguish a list of issues because Joe never puts a space in the related list
+    # The strategy is to take the string chacater by character and whittle stuff down as we interpret it.
+    # The intentionn is that we come back to the start of the look each time we have disposed of a chunk of characters, so that the next character should start a new issue designation
+    while len(stuff) > 0:
+        # If the first character is a "V", we have either a volume-issue pair or a volume followed by a list of issues all in that volume
+        # We can distinguish a list of issues because Joe never (well, hardly ever!) puts a space in the related list
         issueSpecs=None
+        stuff=stuff.strip()  # Leading and trailing whitespace is uninteresting
         if (stuff[0].lower() == "v"):
             # Look for a subsequent ", " or eol or ";"
             loc=stuff.find(", ")
@@ -131,14 +135,12 @@ for i in range(0, len(allFanzines1942)):
             if iss != None:
                 issueSpecList.Append(iss)
 
-        else:
-            # It's not a Vn#n sort of thing, but a list of whole numbers
-            # Look for a ", " or eol or ";"
-            stuff=stuff.strip()
+        # It's not a Vn#n sort of thing, but maybe it's a list of whole numbers
+        # It must start with a digit
+        elif stuff[0].isdigit():
             loc=stuff.find(",")
             if loc == -1:
                 loc=stuff.find(";")
-
             try:
                 if loc != -1:
                     specStr=stuff[:loc]

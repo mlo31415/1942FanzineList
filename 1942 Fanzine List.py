@@ -141,7 +141,7 @@ for index in range(0, len(allFanzines1942)):
                 vlist=stuff[:locNextVlist-1]
                 stuff=stuff[locNextVlist:]
 
-                iss=FanacNames.InterpretIssueSpecText(vlist)
+                iss=FanacNames.InterpretVolNumSpecText(vlist)
 
                 if iss != None:
                     issueSpecList.Append(iss)
@@ -154,27 +154,14 @@ for index in range(0, len(allFanzines1942)):
             loc=stuff.find(",")
             if loc == -1:
                 loc=stuff.find(";")
-            try:
-                if loc != -1:
-                    specStr=stuff[:loc]
-                    stuff=stuff[loc+1:].strip()
-                    issueSpecList.Append([FanacNames.IssueSpec().Set1(int(specStr))])
-                else:
-                    issueSpecList.Append([FanacNames.IssueSpec().Set1(int(stuff))])
-                    stuff=""
-            except:
-                # If we encounter an open parenthesis, it and its contents are treated as uninterpretable text
-                stuff=stuff.strip()
-                if stuff[0] == "(":
-                    # Find closing ")"
-                    loc=stuff.find(")")
-                    if loc > 0:
-                        specStr=stuff[:loc]
-                        stuff=stuff[loc+1:]
-                        issueSpecList.Append1(FanacNames.IssueSpec().SetGarbage(specStr))
-                        continue
-                stuff=""    # TODO: Should try to recover so any later specs can be interpreted
-                continue
+                if loc == -1:   # Must be eol
+                    loc=len(stuff)
+            rslt=FanacNames.InterpretWholenumSpecText(stuff[:loc])
+            if rslt != None:
+                issueSpecList.Append(rslt)
+                stuff=stuff[loc+1:]
+            else:
+                print("***FanacNames.InterpretWholenumSpecText returned None from"+stuff[:loc-1])
 
         # OK, it's probably junk. Absorb everything until the next V-spec or digit
         else:
@@ -201,7 +188,7 @@ for index in range(0, len(allFanzines1942)):
     allFanzines1942[index]=allFanzines1942[index]._replace(Issues=issueSpecList)
 
 
-del i, stuff, iss, loc, specStr, issueSpecs, index, fz, end, garbage, parenLevel, vlist, locNextVlist
+del i, stuff, iss, loc, issueSpecs, index, fz, end, garbage, parenLevel, vlist, locNextVlist
 print("----Done decoding issue list in list of all 1942 fanzines")
 
 

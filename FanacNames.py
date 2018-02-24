@@ -1,5 +1,6 @@
 import collections
 import Helpers
+import re
 
 # This is a tuple which associates all the different forms of a fanzine's name on fanac.org.
 # It does *not* try to deal with namechanges!
@@ -271,8 +272,10 @@ class IssueSpecList:
     def List(self):
         return self.list
 
+
+# -------------------------------------------------------------------------------
 # This takes one issue text string (which may specify multiple issues) and interpret it.
-def InterpretIssueSpecText(specStr):
+def InterpretVolNumSpecText(specStr):
     # OK, now try to decode the spec and return a list (possibly of length 1) of IssueSpecs
     # It could be
     #   Vnn#nn
@@ -307,5 +310,33 @@ def InterpretIssueSpecText(specStr):
         return [IssueSpec().Set1(int(specStr))]
 
     except:
-        print("oops.")
+        print("oops: "+specStr)
         return None
+
+
+# This takes one issue text string (which may specify multiple issues) and interpret it.
+def InterpretWholenumSpecText(specStr):
+    # OK, now try to decode the spec and return a list (possibly of length 1) of IssueSpecs
+    # Since this is a Whole number, the format is simple, but we need to deal with decorations, e.g, '4?"
+
+    specStr=specStr.strip()
+    if len(specStr) == 0:
+        return None
+
+    isAllDigits=all([x.isdigit() for x in specStr])  # Isn't this cute? Comprehension creates list of logical from test of isdigit() on each character, and all() does an and of them all
+
+    if isAllDigits:
+        try:
+            return [IssueSpec().Set1(int(specStr))]
+        except:
+            return [IssueSpec()]
+
+    # OK, we have some non-digits in here.
+    # For now, let's deal with the case where the leading digits are all we care about
+    p=re.compile("^(\d+)(.*)$")
+    m=p.match(specStr)
+    if m!=None and len(m.groups()) == 2:
+        return InterpretWholenumSpecText(m.groups()[0])
+
+    print("oops: "+specStr)
+    return None

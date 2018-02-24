@@ -80,7 +80,7 @@ def Read1942FanzineList():
         title=""
         found=False
         if len(possible) > 0:
-            hasDigit=not all([not x.isdigit() for x in possible])   # Is this cute? Comprehension creates list of logical from test of isdigit() on each character, and all does an and of them all
+            hasDigit=not all([not x.isdigit() for x in possible])   # Isn't this cute? Comprehension creates list of logical from test of isdigit() on each character, and all does an and of them all
             if hasDigit:
                 title=startstuff
                 issues=possible

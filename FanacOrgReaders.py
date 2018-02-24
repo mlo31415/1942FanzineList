@@ -413,9 +413,9 @@ class ExternalLinks:
 # For now, we'll attempt only to format what we interpret, above: whole numbers and Vol/# combinations
 def FormatStuff(fz):
     if fz.Issues == None or fz.Issues.len() == 0:
-        return fz.Stuff
+        return fz.IssuesText+" "+fz.Possible+" "+fz.Junk
 
-    print("   FormatStuff: fz.Name="+str(fz.Name)+"  fz.FanacDirName="+str(fz.FanacDirName)+"   fz.Stuff="+fz.Issues.Print())
+    print("   FormatStuff: fz.Name="+str(fz.Title)+"  fz.FanacDirName="+str(fz.FanacDirName)+"   fz.Stuff="+fz.Issues.Print())
 
     out=""
     # Our job here is to turn this into HTML which includes links for those issues which have links.
@@ -437,7 +437,7 @@ def FormatStuff(fz):
         # TODO: Add support for UninterpretableText and TrailingGarbage
         elif issue.Whole != None:     # We have Num, but not Vol
             # Look up the fanzine to see if it is on fanac.org. Then look up the Vol/Issue to see if the specific issue is there.
-            name = fz.FanacFanzineName or fz.Name
+            name = fz.FanacFanzineName or fz.Title
 
             # Check the table of all fanzines issues on fanac.org to see if there is a match for fanzine-vol-issue
             url=None
@@ -478,7 +478,7 @@ def FormatStuff(fz):
         else:
             # We don't have issue.Whole, so we must have both vol and num
             # Look up the fanzine to see if it is on fanac.org. Then look up the Vol/Issue to see if the specific issue is there.
-            name = fz.FanacFanzineName or fz.Name
+            name = fz.FanacFanzineName or fz.Title
 
             # Check the table of all fanzines issues on fanac.org to see if there is a match for fanzine-vol-issue
             url=None

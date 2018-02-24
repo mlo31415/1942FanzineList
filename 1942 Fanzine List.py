@@ -45,16 +45,16 @@ print("----Begin combining information into one table.")
 #   3. We highlight those fanzines which are eligible for a 1942 Hugo
 
 # Define a named tuple to hold the expanded data I get by combining all the sources
-ExpandedData=collections.namedtuple("ExpandedData", "Name Editor Stuff IsHugoEligible FanacDirName FanacFanzineName URL Issues")
+ExpandedData=collections.namedtuple("ExpandedData", "Title Editor IssuesText Junk Possible IsHugoEligible FanacDirName FanacFanzineName URL Issues")
 
 for i in range(0, len(allFanzines1942)):
     fanzine=allFanzines1942[i]
 
     # First we take the fanzine name from Joe's 1942 Fanzine List.txt and match it to a 1942 fanzine on fanac.org
-    jname=fanzine.Name
+    jTitle=fanzine.Title
 
     isHugoEligible=False        # Joe has tagged Hugo-eligible fanzines by making their name to be all-caps
-    if jname == jname.upper():
+    if jTitle == jTitle.upper():
         isHugoEligible=True
 
     # listOf1942s is a dictionary of 1942 fanzines that we have on fanac.org. The key is the fanzine name in lower case
@@ -62,20 +62,20 @@ for i in range(0, len(allFanzines1942)):
     # We want to look up the entries from Joe's list and see if they are on it.
     name=None
     url=None
-    tpl=FanacOrgReaders.FanacDirectories().GetTuple(jname)
+    tpl=FanacOrgReaders.FanacDirectories().GetTuple(jTitle)
     if tpl != None:
         name, url=tpl
         print("   Found (1): "+name +" --> " + url)
     else:
-        print("   Not found in g_FanacDirectories: "+jname)
+        print("   Not found in g_FanacDirectories: "+jTitle)
 
     if name != None:
         # Update the 1942 fanzines list with the new information
-        allFanzines1942[i]=ExpandedData(Name=fanzine.Name, Editor=fanzine.Editor, Stuff=fanzine.Stuff, IsHugoEligible=isHugoEligible, FanacDirName=url, FanacFanzineName=name, URL=Helpers.RelPathToURL(url), Issues=None)
+        allFanzines1942[i]=ExpandedData(Title=fanzine.Title, Editor=fanzine.Editor, IssuesText=fanzine.IssuesText, Junk=fanzine.Junk, Possible=fanzine.Possible, IsHugoEligible=isHugoEligible, FanacDirName=url, FanacFanzineName=name, URL=Helpers.RelPathToURL(url), Issues=None)
     else:
-        allFanzines1942[i]=ExpandedData(Name=fanzine.Name, Editor=fanzine.Editor, Stuff=fanzine.Stuff, IsHugoEligible=isHugoEligible, FanacDirName=None, FanacFanzineName=None, URL=None, Issues=None)
+        allFanzines1942[i]=ExpandedData(Title=fanzine.Title, Editor=fanzine.Editor, IssuesText=fanzine.IssuesText, Junk=fanzine.Junk, Possible=fanzine.Possible, IsHugoEligible=isHugoEligible, FanacDirName=None, FanacFanzineName=None, URL=None, Issues=None)
 
-del fanzine, jname, name, url, i, isHugoEligible, tpl
+del fanzine, jTitle, name, url, i, isHugoEligible, tpl
 print("----Done combining information into one table.")
 
 
@@ -85,11 +85,11 @@ print("----Begin decoding issue list in list of all 1942 fanzines")
 IssueNumber=collections.namedtuple("IssueNumber", "Vol Num")
 
 # OK, now the problem is to decode the crap at the end to form a list of issue numbers...or something...
-for i in range(0, len(allFanzines1942)):
-    fz=allFanzines1942[i]
+for index in range(0, len(allFanzines1942)):
+    fz=allFanzines1942[index]
     print("   Decoding issue list: "+ str(fz))
 
-    stuff=fz.Stuff
+    stuff=fz.IssuesText
     if stuff == None:    # Skip empty stuff
         continue
     if len("".join(stuff.split())) == 0: # Skip if it's all whitespace by splitting on whitespace, joining the remnants and counting the remaining characters
@@ -110,30 +110,43 @@ for i in range(0, len(allFanzines1942)):
     #   Trailing '?' will be ignored
     #   And sometimes there is odd stuff tossed in which can't be interpreted.
 
-    # The strategy is to take the string chacater by character and whittle stuff down as we interpret it.
-    # The intentionn is that we come back to the start of the look each time we have disposed of a chunk of characters, so that the next character should start a new issue designation
+    # The strategy is to take the string character by character and whittle stuff down as we interpret it.
+    # The intention is that we come back to the start of the look each time we have disposed of a chunk of characters, so that the next character should start a new issue designation
+    # There are four basic patterns to be seen in Joe's data:
+    #   A comma-separated list of issue whole numners
+    #   A list of Volumes and numbers (many delimiter patterns!)
+    #   A range of whole numbers
+    #   A list of year:issue pairs
+    #  In all cases we need to be prepared to deal with (and preserve) random text.
+    iss=[]
     while len(stuff) > 0:
-        # If the first character is a "V", we have either a volume-issue pair or a volume followed by a list of issues all in that volume
-        # We can distinguish a list of issues because Joe never (well, hardly ever!) puts a space in the related list
+
         issueSpecs=None
         stuff=stuff.strip()  # Leading and trailing whitespace is uninteresting
-        if (stuff[0].lower() == "v"):
-            # Look for a subsequent ", " or eol or ";"
-            loc=stuff.find(", ")
-            if loc == -1:
-                loc=stuff.find("; ")
-            if loc == -1 or loc+2 > len(stuff):
-                # This spec appears to extend to the end of the string
-                specStr=stuff
-                stuff=""
-            else:
-                specStr=stuff[:loc].strip()
-                stuff=stuff[loc+2:].strip()
 
-            iss=FanacNames.InterpretIssueSpecText(specStr)
+        # If the first character is a "V", we have a volume followed by one or more issues all in that volume
+        # Sometimes there will be another Vn indicating a new volume
+        # A V which begins a volum-num sequence *always* has the pattern <delimiter>V<digit>, where start-of-line counts as a delimiter.
+        # Because we've trimmed off leading whitespace, we can detected the first:
+        if (len(stuff) > 1 and stuff[0].lower() == "v" and stuff[1].isdigit()):
+            while len(stuff)>0:
+                # Look for the termination of the first Volume-num list. It ends at another Volume-Num list or at eol
+                locNextVlist=None
+                for i in range(1, len(stuff)-3):
+                    if (stuff[i-1] == " " or stuff[i-1] == ";") and stuff[i].lower() == "v" and stuff[i+1].isdigit():
+                        locNextVlist=i
+                        break
+                if locNextVlist == None:
+                    locNextVlist=len(stuff)
+                vlist=stuff[:locNextVlist-1]
+                stuff=stuff[locNextVlist:]
 
-            if iss != None:
-                issueSpecList.Append(iss)
+                iss=FanacNames.InterpretIssueSpecText(vlist)
+
+                if iss != None:
+                    issueSpecList.Append(iss)
+            break
+
 
         # It's not a Vn#n sort of thing, but maybe it's a list of whole numbers
         # It must start with a digit
@@ -163,12 +176,32 @@ for i in range(0, len(allFanzines1942)):
                 stuff=""    # TODO: Should try to recover so any later specs can be interpreted
                 continue
 
+        # OK, it's probably junk. Absorb everything until the next V-spec or digit
+        else:
+            parenLevel=0
+            end=None
+            for i in range(0, len(stuff)):
+                if stuff[i] == "(":
+                    parenLevel=parenLevel+1
+                if stuff[i] == ")":
+                    parenLevel=parenLevel+1
+                if parenLevel > 0:
+                    continue    # If we're inside a parenthesis, anything goes until we're out of it again.
+                if stuff[i].lower() == 'v' or stuff[i].isdigit():
+                    end=i
+                    break
+            if end == None:
+                end=len(stuff)
+            garbage=stuff[:end]
+            stuff=stuff[end:]
+            issueSpecList.Append1(FanacNames.IssueSpec().SetGarbage(garbage))
+
     print("   "+issueSpecList.Print())
 
-    allFanzines1942[i]=allFanzines1942[i]._replace(Issues=issueSpecList)
+    allFanzines1942[index]=allFanzines1942[index]._replace(Issues=issueSpecList)
 
 
-del i, stuff, iss, loc, specStr, issueSpecs
+del i, stuff, iss, loc, specStr, issueSpecs, index, fz, end, garbage, parenLevel, vlist, locNextVlist
 print("----Done decoding issue list in list of all 1942 fanzines")
 
 
@@ -194,34 +227,35 @@ for fz in allFanzines1942:
 
     htm=None
     if fz.IsHugoEligible:
-        name=fz.Name.title()    # Joe has eligible name all in UC.   Make them normal title case.
+        name=fz.Title.title()    # Joe has eligible name all in UC.   Make them normal title case.
         if name != None and fz.URL != None:
             # We have full information for an eligible zine
-            txt="Eligible:  "+name+" ("+fz.Editor+") "+fz.Stuff+'     <a href="'+fz.URL+'">'+name+"</a>"
+            txt="Eligible:  "+name+" ("+fz.Editor+") "+fz.IssuesText+'     <a href="'+fz.URL+'">'+name+"</a>"
             htm='<i><a href="'+fz.URL+'">'+name+'</a></i>&nbsp;&nbsp;<font color="#FF0000">(Eligible)</font>&nbsp;&nbsp;'+" ("+fz.Editor+") <br>"+FanacOrgReaders.FormatStuff(fz)
         elif name != None and fz.URL == None:
             # We're missing a URL for an eligible zine
-            txt="Eligible:  "+name+" ("+fz.Editor+") "+fz.Stuff
+            txt="Eligible:  "+name+" ("+fz.Editor+") "+fz.IssuesText
             htm='<i>'+name+"</i>"+'&nbsp;&nbsp;<font color="#FF0000">(Eligible)</font>&nbsp;&nbsp; ('+fz.Editor+") <br>"+FanacOrgReaders.FormatStuff(fz)
         else:
             # We're missing all information from fanac.org for an eligible fanzine -- it isn't there
-            txt=name+" ("+fz.Editor+") "+fz.Stuff
-            htm='<i>'+fz.Name+'</i>&nbsp;&nbsp;<font color="#FF0000">(Eligible)</font>&nbsp;&nbsp; ('+fz.Editor+") <br>"+FanacOrgReaders.FormatStuff(fz)
+            txt=name+" ("+fz.Editor+") "+fz.IssuesText
+            htm='<i>'+name+'</i>&nbsp;&nbsp;<font color="#FF0000">(Eligible)</font>&nbsp;&nbsp; ('+fz.Editor+") <br>"+FanacOrgReaders.FormatStuff(fz)
     else:
-        if fz.Name != None and fz.URL != None:
+        name=fz.Title.title()
+        if fz.Title != None and fz.URL != None:
             # We have full information for an ineligible zine
-            txt=fz.Name+" ("+fz.Editor+") "+fz.Stuff+'     <a href="'+fz.URL+'">'+fz.Name+"</a>"
-            htm='<i><a href="'+fz.URL+'">'+fz.Name+"</a></i>"+" ("+fz.Editor+") <br>"+FanacOrgReaders.FormatStuff(fz)
-        elif fz.Name != None and fz.URL == None:
+            txt=name+" ("+fz.Editor+") "+fz.IssuesText+'     <a href="'+fz.URL+'">'+fz.Title+"</a>"
+            htm='<i><a href="'+fz.URL+'">'+fz.Title+"</a></i>"+" ("+fz.Editor+") <br>"+FanacOrgReaders.FormatStuff(fz)
+        elif fz.Title != None and fz.URL == None:
             # We're missing a URL for an ineligible item
-            txt=fz.Name+" ("+fz.Editor+") "+fz.Stuff
-            htm='<i>'+fz.Name+"</a></i>"+" ("+fz.Editor+") <br>"+FanacOrgReaders.FormatStuff(fz)
+            txt=name+" ("+fz.Editor+") "+fz.IssuesText
+            htm='<i>'+name+"</a></i>"+" ("+fz.Editor+") <br>"+FanacOrgReaders.FormatStuff(fz)
         else:
             # We're missing all information from fanac.org for an ineligible fanzine -- it isn't there
-            txt=fz.Name+" ("+fz.Editor+") "+fz.Stuff
-            htm='<i>'+fz.Name+"</i> ("+fz.Editor+") <br>"+FanacOrgReaders.FormatStuff(fz)
+            txt=name+" ("+fz.Editor+") "+fz.IssuesText
+            htm='<i>'+name+"</i> ("+fz.Editor+") <br>"+FanacOrgReaders.FormatStuff(fz)
     linecount=linecount+1
-    if linecount == len(allFanzines1942)/2:
+    if linecount == round(len(allFanzines1942)/2):
         f.write('</td>\n<td valign="top" align="left">\n<ul>')
 
     print(txt)
@@ -239,7 +273,7 @@ f2=open("1942 Fanzines Not on fanac.txt", "w")
 f2.write("1942 Fanzines not on fanac.org\n\n")
 for fz in allFanzines1942:
     if fz.FanacDirName == None or fz.URL == None:
-        f2.write(fz.Name+"\n")
+        f2.write(fz.Title+"\n")
 f2.flush()
 f2.close()
 del f2, htm, txt, fz

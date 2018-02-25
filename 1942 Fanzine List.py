@@ -211,8 +211,8 @@ for fz in allFanzines1942:  # fz is a FanzineData class object
     print("   Writing HTML for: "+str(fz))
 
     htm=None
+    name=FanacNames.CapitalizeFanzine(fz.title)  # Joe has eligible name all in UC.   Make them normal title case.
     if fz.isHugoEligible:
-        name=fz.title.title()    # Joe has eligible name all in UC.   Make them normal title case.
         if name != None and fz.url != None:
             # We have full information for an eligible zine
             txt="Eligible:  "+name+" ("+fz.editors+") "+fz.issuesText+'     <a href="'+fz.url+'">'+name+"</a>"
@@ -226,7 +226,6 @@ for fz in allFanzines1942:  # fz is a FanzineData class object
             txt=name+" ("+fz.editors+") "+fz.issuesText
             htm='<i>'+name+'</i>&nbsp;&nbsp;<font color="#FF0000">(Eligible)</font>&nbsp;&nbsp; ('+fz.editors+") <br>"+FanacOrgReaders.FormatStuff(fz)
     else:
-        name=fz.title.title()
         if fz.title != None and fz.url != None:
             # We have full information for an ineligible zine
             txt=name+" ("+fz.editors+") "+fz.issuesText+'     <a href="'+fz.url+'">'+fz.title+"</a>"

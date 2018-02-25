@@ -340,3 +340,8 @@ def InterpretWholenumSpecText(specStr):
 
     print("oops: "+specStr)
     return None
+
+# ----------------------------------------------------------
+# Take a fanzine title string and try to capitalize it correctly
+def CapitalizeFanzine(name):
+    return name.title()

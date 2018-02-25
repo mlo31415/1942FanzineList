@@ -344,4 +344,14 @@ def InterpretWholenumSpecText(specStr):
 # ----------------------------------------------------------
 # Take a fanzine title string and try to capitalize it correctly
 def CapitalizeFanzine(name):
-    return name.title()
+
+    # Start by putting the name in title case.
+    name=name.title()
+
+    # Now de-capitalize some words
+    name=name.replace(" Of ", " of ").replace(" The ", " the ").replace(" In ", " in ").replace( "And ", " and ")
+
+    # Deal with an odd limitation of title() where it leaves 'S capitalized (e.g., "Milty'S Mag"
+    name=name.replace("'S ", "'s ").replace("’S ", "’s ")
+
+    return name

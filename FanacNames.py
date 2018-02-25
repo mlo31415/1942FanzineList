@@ -351,7 +351,7 @@ def CapitalizeFanzine(name):
     # Now de-capitalize some words
     name=name.replace(" Of ", " of ").replace(" The ", " the ").replace(" In ", " in ").replace( "And ", " and ")
 
-    # Deal with an odd limitation of title() where it leaves 'S capitalized (e.g., "Milty'S Mag"
+    # Deal with an odd limitation of title() where it leaves possessive 'S capitalized (e.g., "Milty'S Mag")
     name=name.replace("'S ", "'s ").replace("’S ", "’s ")
 
     return name

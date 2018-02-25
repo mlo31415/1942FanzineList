@@ -212,32 +212,33 @@ for fz in allFanzines1942:  # fz is a FanzineData class object
 
     htm=None
     name=FanacNames.CapitalizeFanzine(fz.title)  # Joe has eligible name all in UC.   Make them normal title case.
+    editors=FanacNames.CapitalizeFanzine(fz.editors)
     if fz.isHugoEligible:
         if name != None and fz.url != None:
             # We have full information for an eligible zine
-            txt="Eligible:  "+name+" ("+fz.editors+") "+fz.issuesText+'     <a href="'+fz.url+'">'+name+"</a>"
-            htm='<i><a href="'+fz.url+'">'+name+'</a></i>&nbsp;&nbsp;<font color="#FF0000">(Eligible)</font>&nbsp;&nbsp;'+" ("+fz.editors+") <br>"+FanacOrgReaders.FormatStuff(fz)
+            txt="Eligible:  "+name+" ("+editors+") "+fz.issuesText+'     <a href="'+fz.url+'">'+name+"</a>"
+            htm='<i><a href="'+fz.url+'">'+name+'</a></i>&nbsp;&nbsp;<font color="#FF0000">(Eligible)</font>&nbsp;&nbsp;'+" ("+editors+") <br>"+FanacOrgReaders.FormatStuff(fz)
         elif name != None and fz.url == None:
             # We're missing a URL for an eligible zine
-            txt="Eligible:  "+name+" ("+fz.editors+") "+fz.issuesText
-            htm='<i>'+name+"</i>"+'&nbsp;&nbsp;<font color="#FF0000">(Eligible)</font>&nbsp;&nbsp; ('+fz.editors+") <br>"+FanacOrgReaders.FormatStuff(fz)
+            txt="Eligible:  "+name+" ("+editors+") "+fz.issuesText
+            htm='<i>'+name+"</i>"+'&nbsp;&nbsp;<font color="#FF0000">(Eligible)</font>&nbsp;&nbsp; ('+editors+") <br>"+FanacOrgReaders.FormatStuff(fz)
         else:
             # We're missing all information from fanac.org for an eligible fanzine -- it isn't there
-            txt=name+" ("+fz.editors+") "+fz.issuesText
-            htm='<i>'+name+'</i>&nbsp;&nbsp;<font color="#FF0000">(Eligible)</font>&nbsp;&nbsp; ('+fz.editors+") <br>"+FanacOrgReaders.FormatStuff(fz)
+            txt=name+" ("+editors+") "+fz.issuesText
+            htm='<i>'+name+'</i>&nbsp;&nbsp;<font color="#FF0000">(Eligible)</font>&nbsp;&nbsp; ('+editors+") <br>"+FanacOrgReaders.FormatStuff(fz)
     else:
         if fz.title != None and fz.url != None:
             # We have full information for an ineligible zine
-            txt=name+" ("+fz.editors+") "+fz.issuesText+'     <a href="'+fz.url+'">'+fz.title+"</a>"
-            htm='<i><a href="'+fz.url+'">'+fz.title+"</a></i>"+" ("+fz.editors+") <br>"+FanacOrgReaders.FormatStuff(fz)
+            txt=name+" ("+editors+") "+fz.issuesText+'     <a href="'+fz.url+'">'+fz.title+"</a>"
+            htm='<i><a href="'+fz.url+'">'+fz.title+"</a></i>"+" ("+editors+") <br>"+FanacOrgReaders.FormatStuff(fz)
         elif fz.title != None and fz.url == None:
             # We're missing a URL for an ineligible item
-            txt=name+" ("+fz.editors+") "+fz.issuesText
-            htm='<i>'+name+"</a></i>"+" ("+fz.editors+") <br>"+FanacOrgReaders.FormatStuff(fz)
+            txt=name+" ("+editors+") "+fz.issuesText
+            htm='<i>'+name+"</a></i>"+" ("+editors+") <br>"+FanacOrgReaders.FormatStuff(fz)
         else:
             # We're missing all information from fanac.org for an ineligible fanzine -- it isn't there
-            txt=name+" ("+fz.editors+") "+fz.issuesText
-            htm='<i>'+name+"</i> ("+fz.editors+") <br>"+FanacOrgReaders.FormatStuff(fz)
+            txt=name+" ("+editors+") "+fz.issuesText
+            htm='<i>'+name+"</i> ("+editors+") <br>"+FanacOrgReaders.FormatStuff(fz)
     linecount=linecount+1
     if linecount == round(len(allFanzines1942)/2):
         f.write('</td>\n<td valign="top" align="left">\n<ul>')

@@ -147,7 +147,7 @@ for index in range(0, len(allFanzines1942)):
                     issueSpecList.Append(iss)
             continue
 
-        # This one's complicated:  nnn-nnn, a range of numbers
+        # Deal with a range of numbers, nnn-nnn
         m=re.compile("^(\d+)\s*[\-–]\s*(\d+)$").match(stuff)
         if m != None and len(m.groups()) == 2:
             rslt=[]
@@ -214,11 +214,20 @@ f.write('-->\n')
 f.write('</style>\n')
 f.write('<table border="0" cellspacing="0" cellpadding="0" style="margin-top: 0; margin-bottom: 0">\n')
 f.write('<tr>\n')
-f.write('<td valign="top" align="left">\n')
+f.write('<td valign="top" align="left" width="50%">\n')
 f.write('<ul>\n')
 
+# We want to produce a two-column page, with well-balanced columns. Count the number of distinct title (not issues) in allFanzines1942
+listoftitles=[]
+for fz in allFanzines1942:  # fz is a FanzineData class object
+    if not fz.title in listoftitles:
+        listoftitles.append(fz.title)
+numTitles=len(listoftitles)
+
+
+
 # Create the HTML file
-linecount=0
+listoftitles=[]     # Empty it so we can again add titles to it as we find them
 for fz in allFanzines1942:  # fz is a FanzineData class object
     print("   Writing HTML for: "+str(fz))
 
@@ -251,9 +260,12 @@ for fz in allFanzines1942:  # fz is a FanzineData class object
             # We're missing all information from fanac.org for an ineligible fanzine -- it isn't there
             txt=name+" ("+editors+") "+fz.issuesText
             htm='<i>'+name+"</i> ("+editors+") <br>"+FanacOrgReaders.FormatIssueSpecs(fz)
-    linecount=linecount+1
-    if linecount == round(len(allFanzines1942)/2):
-        f.write('</td>\n<td valign="top" align="left">\n<ul>')
+
+    # Insert the column end, new column start HTML when half the fanzines titles have been processed.
+    if not fz.title in listoftitles:
+        listoftitles.append(fz.title)
+    if round(numTitles/2) == len(listoftitles):
+        f.write('</td>\n<td valign="top" align="left" width="50%">\n<ul>')
 
     print(txt)
     print(htm)

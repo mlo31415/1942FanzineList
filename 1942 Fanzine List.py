@@ -3,7 +3,6 @@ import Helpers
 import FanacNames
 import FanacOrgReaders
 import RetroHugoReaders
-import FanzineData
 
 #--------------------------------------
 # Overall Strategy
@@ -44,10 +43,9 @@ print("----Begin combining information into one table.")
 #   3. We highlight those fanzines which are eligible for a 1942 Hugo
 
 for i in range(0, len(allFanzines1942)):
-    fanzine=allFanzines1942[i]
 
     # First we take the fanzine name from Joe's 1942 Fanzine List.txt and match it to a 1942 fanzine on fanac.org
-    jTitle=fanzine.title
+    jTitle=allFanzines1942[i].title
 
     isHugoEligible=False        # Joe has tagged Hugo-eligible fanzines by making their name to be all-caps
     if jTitle == jTitle.upper():
@@ -73,7 +71,7 @@ for i in range(0, len(allFanzines1942)):
         allFanzines1942[i].SetURL(Helpers.RelPathToURL(url))
 
 
-del fanzine, jTitle, name, url, i, isHugoEligible, tpl
+del jTitle, name, url, i, isHugoEligible, tpl
 print("----Done combining information into one table.")
 
 

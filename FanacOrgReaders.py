@@ -4,9 +4,7 @@ import collections
 import Helpers
 import FanacNames
 import re
-
-global g_FanacFanzineDirectoryFormats
-g_FanacFanzineDirectoryFormats=None
+import FanacDirectoryFormats
 
 # ===============================================================================
 # This is a class to manage the list of fanzine directories in fanac.org
@@ -98,45 +96,6 @@ class FanacDirectories:
 # End of class FanacDirectories
 
 
-
-# ============================================================================================
-def ReadFanacOrgFormatsTxt():
-    # print("----Begin reading Fanac fanzine directory formats.txt")
-    # FanacIssueInfo=collections.namedtuple("FanacIssueInfo", "FanzineName, IssueName, Vol, Number, URL")
-    FanacDirectoryFormat=collections.namedtuple("FanacDirectoryFormat", "Num1, Num2, DirName")
-    # Next we read the table of fanac.org file formats.
-    # Fanac.org's fanzines are *mostly* in one format, but there are at least a dozen different ways of presenting them.
-    # The table will allow us to pick the right method for reading the index.html file and locating the right issue URL
-    try:
-        f=open("Fanac fanzine directory formats.txt", "r")
-    except:
-        print("Can't open 'Fanac fanzine directory formats.txt'")
-        exit(0)
-    # Read the file.  Lines beginning with a # are comments and are ignored
-    # Date lines consist of a commz-separated list:
-    #       The first two elements are code numbers
-    #       The remaining elements are directories in fanac.org/fanzines
-    #       We create a dictionary of fanzine directory names in lower case.
-    #       The value of each directory entry is a tuple consisting of Name (full case) folowed by the two numbers.
-    fanacFanzineDirectoryFormats={}
-    for line in f:
-        line=line.strip()  # Make sure there are no leading or traling blanks
-        if len(line)==0 or line[0]=="#":  # Ignore some lines
-            continue
-        # We apparently have a data line. Split it into tokens. Remove leading and trailing blanks, but not internal blanks.
-        spl=line.split(",")
-        if len(spl)<3:  # There has to be at least three tokens (the two numbers and at least one directory name)
-            print("***Something's wrong with "+line)
-            continue
-        nums=spl[:2]
-        spl=spl[2:]
-        for dir in spl:
-            fanacFanzineDirectoryFormats[dir.lower().strip()]=FanacDirectoryFormat(int(nums[0]), int(nums[1]), dir)
-    print("----Done reading Fanac fanzine directory formats.txt")
-
-    return fanacFanzineDirectoryFormats
-
-
 # ============================================================================================
 # Function to extract information from a fanac.org fanzine index.html page
 def ReadAndAppendFanacFanzineIndexPage(fanzineName, directoryUrl, format, fanzineIssueList):
@@ -148,7 +107,7 @@ def ReadAndAppendFanacFanzineIndexPage(fanzineName, directoryUrl, format, fanzin
     FanacIssueInfo=collections.namedtuple("FanacIssueInfo", "FanzineName, IssueName, Vol, Number, URL")
 
     # We're only prepared to read a few formats.  Skip over the others right now.
-    OKFormats=((0,0), (1,6), (1,7))
+    OKFormats=((0,0), (1,6))
     codes=(format[0], format[1])
     if not codes in OKFormats:
         print("      Can't handle format:"+str(format) +" from "+directoryUrl)
@@ -312,10 +271,6 @@ def ReadFanacFanzineIssues():
     # Loop over the list of all 1942 fanzines, building up a list of those on fanac.org
     print("----Begin reading index.html files on fanac.org")
 
-    global g_FanacFanzineDirectoryFormats
-    if g_FanacFanzineDirectoryFormats == None:
-        g_FanacFanzineDirectoryFormats=ReadFanacOrgFormatsTxt()
-
     global g_fanacIssueInfo
     g_fanacIssueInfo=[]
     for key, (title, dirname) in FanacDirectories().Dict().items():
@@ -325,13 +280,10 @@ def ReadFanacFanzineIssues():
             continue
 
         # Get the index file format for this directory
-        try:
-            dn=dirname.lower()
+        format=FanacDirectoryFormats.FanacDirectoryFormats().GetFormat(dirname.lower())
+        print("   Format: "+title+" --> "+FanacNames.StandardizeName(title.lower())+" --> "+str(format))
 
-            fmt=g_FanacFanzineDirectoryFormats[dn]
-            print("   Format: "+title+" --> "+FanacNames.StandardizeName(title.lower())+" --> "+str(fmt))
-        except:
-            print("   Format: "+title+" --> "+FanacNames.StandardizeName(title.lower())+" -->  (0, 0)")
+        if format == None:
             # This is actually a good thing, because it means that the fanzines has the default index.html type
             print("   Using default directory format of (0,0)/(1,1)")
 
@@ -347,16 +299,17 @@ def ReadFanacFanzineIssues():
                     g_fanacIssueInfo=ret
             continue
 
-        if format == (8, 0):
+        elif format == (8, 0):
             print("   Skipped because no index.html file: "+ dirname)
             continue
 
+        # TODO: Can we move the format decision code into one function? It'sa now split between here and ReadAndAppendFanacFanzineIndexPage
         # The URL we get is relative to the fanzines directory which has the URL fanac.org/fanzines
         # We need to turn relPath into a URL
         url=Helpers.RelPathToURL(dirname)
         print(title, " ", url)
         if url.startswith("http://www.fanac.org") and not url.startswith("http://www.fanac.org//fan_funds"):
-            ret=ReadAndAppendFanacFanzineIndexPage(title, url, fmt, g_fanacIssueInfo)
+            ret=ReadAndAppendFanacFanzineIndexPage(title, url, format, g_fanacIssueInfo)
             if ret != None:
                 g_fanacIssueInfo=ret
 

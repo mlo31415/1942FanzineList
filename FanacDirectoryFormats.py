@@ -20,7 +20,7 @@ class FanacDirectoryFormats:
     def GetFormat(self, dirname):
         if dirname in g_FanacFanzineDirectoryFormats.keys():
             return g_FanacFanzineDirectoryFormats[dirname]
-        return None
+        return (1, 1, dirname)  # The default format
 
     def ReadFanacOrgFormatsTxt(self):
         global g_FanacFanzineDirectoryFormats

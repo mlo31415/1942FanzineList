@@ -3,6 +3,7 @@ import Helpers
 import FanacNames
 import FanacOrgReaders
 import RetroHugoReaders
+import FanacDirectories
 
 #--------------------------------------
 # Overall Strategy
@@ -24,7 +25,7 @@ import RetroHugoReaders
 
 # Create the list of FanacName tuples which will be used by FanacName functions
 # Note: This is just to get the names and directories, nothing else.
-FanacNames.AddFanacDirectories(FanacOrgReaders.FanacDirectories().Dict())      # Add them to g_fanacNameTuples, which is managed and accessed by FanacNames
+FanacNames.AddFanacDirectories(FanacDirectories.FanacDirectories().Dict())      # Add them to g_fanacNameTuples, which is managed and accessed by FanacNames
 
 # Read Joe's PDF and create a list of tuples, each representing one of the complete set of fanzines of 1942
 # The three items of the tuple are the fanzine name, the fanzine editors, andf the fanzine issue data.
@@ -56,12 +57,12 @@ for i in range(0, len(allFanzines1942)):
     # We want to look up the entries from Joe's list and see if they are on it.
     name=None
     url=None
-    tpl=FanacOrgReaders.FanacDirectories().GetTuple(jTitle)
+    tpl=FanacDirectories.FanacDirectories().GetTuple(jTitle)
     if tpl != None:
         name, url=tpl
         print("   Found (1): "+name +" --> " + url)
     else:
-        print("   Not found in g_FanacDirectories: "+jTitle)
+        print("   Not found in FanacDirectories.FanacDirectories(): "+jTitle)
 
     allFanzines1942[i].SetIsHugoEligible(isHugoEligible)
     if name != None:

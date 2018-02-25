@@ -5,95 +5,8 @@ import Helpers
 import FanacNames
 import re
 import FanacDirectoryFormats
-
-# ===============================================================================
-# This is a class to manage the list of fanzine directories in fanac.org
-
-global g_FanacDirectories   # This is global to share a single instance of the data among all instances of the class, *not* to allow access except through class members
-g_FanacDirectories={}
-
-class FanacDirectories:
-
-    def __init__(self):
-        global g_FanacDirectories
-        if len(g_FanacDirectories) == 0:
-            self.ReadClassicModernPages()
-
-    def Dict(self):
-        return g_FanacDirectories
-
-    # -------------------------------------------------------------------------
-    # We have a name and a dirname from the fanac.org Classic and Modern pages.
-    # The dirname *might* be a URL in which case it needs to be handled as a foreign directory reference
-    def AddDirectory(self, name, dirname):
-        isDup=False
-
-        if name in g_FanacDirectories:
-            print("   duplicate: name="+name+"  dirname="+dirname)
-            return
-
-        if dirname[:3]=="http":
-            print("    ignored, because is HTML: "+dirname)
-            return
-
-        # Add name and directory reference\
-        cname=Helpers.CompressName(name)
-        print("   added to fanacDirectories: key='"+cname+"'  name='"+name+"'  dirname='"+dirname+"'")
-        g_FanacDirectories[cname]=(name, dirname)
-        return
-
-    def Contains(self, name):
-        return Helpers.CompressName(name) in g_FanacDirectories
-
-    def GetTuple(self, name):
-        if self.Contains(name):
-            return g_FanacDirectories[Helpers.CompressName(name)]
-        if self.Contains(name+"the"):
-            return g_FanacDirectories[Helpers.CompressName(name+"the")]
-        if self.Contains(name+"an"):
-            return g_FanacDirectories[Helpers.CompressName(name+"an")]
-        if self.Contains(name+"a"):
-            return g_FanacDirectories[Helpers.CompressName(name+"a")]
-        return None
-
-    def len(self):
-        return len(g_FanacDirectories)
-
-    # ====================================================================================
-    # Read fanac.org/fanzines/Classic_Fanzines.html amd /Modern_Fanzines.html
-    # Read the table to get a list of all the fanzines on Fanac.org
-    # Return a list of tuples (name on page, name of directory)
-    #       The name on page is the display named used in the Classic and Modern tables
-    #       The name of directory is the name of the directory pointed to
-
-    def ReadClassicModernPages(self):
-        fanzinesList=[]
-        print("----Begin reading Classic and Modern tables")
-
-        self.ReadModernOrClassicTable("http://www.fanac.org/fanzines/Classic_Fanzines.html")
-        self.ReadModernOrClassicTable("http://www.fanac.org/fanzines/Modern_Fanzines.html")
-
-        print("----Done reading Classic and Modern tables")
-        return
-
-    # ======================================================================
-    def ReadModernOrClassicTable(self, url):
-        h=requests.get(url)
-        s=BeautifulSoup(h.content, "html.parser")
-        # We look for the first table that does ot contain a "navbar"
-        tables=s.body.find_all("table")
-        for table in tables:
-            if "sortable" in str(table.attrs) and not "navbar" in str(table.attrs):
-                # OK, we've found the main table.  Now read it
-                trs=table.find_all("tr")
-                for i in range(1, len(trs)):
-                    # Now the data rows
-                    name=trs[i].find_all("td")[1].contents[0].contents[0].contents[0]
-                    dirname=trs[i].find_all("td")[1].contents[0].attrs["href"][:-1]
-                    self.AddDirectory(name, dirname)
-        return
-
-# End of class FanacDirectories
+import ExternalLinks
+import FanacDirectories
 
 
 # ============================================================================================
@@ -108,7 +21,7 @@ def ReadFanacFanzineIssues():
 
     global g_fanacIssueInfo
     g_fanacIssueInfo=[]
-    for key, (title, dirname) in FanacDirectories().Dict().items():
+    for key, (title, dirname) in FanacDirectories.FanacDirectories().Dict().items():
         print("'"+key+"', "+title+"', "+dirname+"'")
         if '/' in dirname:
             print("   skipped because of '/' in name:"+dirname)
@@ -303,47 +216,6 @@ def InterpretFanzineTable(fanzineName, FanacIssueInfo, fanzineTable, format):
     return rows
 
 
-
-#------------------------------------------------------------------------
-# This is a class which will always return the External Links table.
-# It will read it the first time it is initialized and thereafter just return it.
-# Usage: x=ExternalClass().List()
-global g_externalLinks1942
-g_externalLinks1942=[]
-
-class ExternalLinks:
-    def __init__(self):
-        import collections
-        global g_externalLinks1942
-        if len(g_externalLinks1942) == 0:
-            print("----Begin reading External Links 1942.txt")
-            # Now we read Links1942.txt, which contains links to issues of fanzines *outside* fanac.org.
-            # It's organized as a table, with the first row a ';'-delimited list of column headers
-            #    and the remaining rows are each a ';'-delimited pointer to an exteral fanzine
-            # First read the header line which names the columns.  The headers are separated from ';", so we need to remove these.
-            f=open("External Links 1942.txt")
-            line=f.readline()
-            line=line.replace(";", "")
-            links1942ColNames=line.split(" ")
-            # Define a named tuple to hold the data I get from the external links input file
-            # This -- elegantly -- defines a named tuple to hold the elements of a line and names each element according to the column header in the first row.
-            ExternalLinksData=collections.namedtuple("ExternalLinksData", line)
-
-            # Now read the rest of the data.
-            for line in f:  # Each line after the first is a link to an external fanzine
-                print("   line="+line.strip())
-                temp=line.split(";")
-                t2=[]
-                for t in temp:
-                    t2.append(t.strip())
-                g_externalLinks1942.append(ExternalLinksData(*tuple(t2)))  # Turn the list into a named tuple.
-            f.close()
-            print("----Done reading External Links 1942.txt")
-
-    def List(self):
-        return g_externalLinks1942
-
-
 #================================================================================================
 # Inline function to format Stuff, which is a list of IssueSpecs
 # Stuff is commonly a list of issue specification interspersed with nonce items
@@ -401,7 +273,7 @@ def FormatStuff(fz):
             # If we couldn't find anything on fanac.org, look for an external link
             if v == None:
                 # We have a name, and a whole number.  See if they turn up as an external link]
-                for ext in ExternalLinks().List():
+                for ext in ExternalLinks.ExternalLinks().List():
                     if FanacNames.CompareNames(ext.Title, name) and int(ext.Whole_Number) == issue.Whole:
                         url=ext.URL
                         print("   FormatStuff: Found external: issue="+str(issue.Whole)+"  url="+url)
@@ -442,7 +314,7 @@ def FormatStuff(fz):
             # If we couldn't find anything on fanac.org, look for an external link
             if v == None:
                 # We have a name, and a whole number.  See if they turn up as an external link]
-                for ext in ExternalLinks().List():
+                for ext in ExternalLinks.ExternalLinks().List():
                     if ext.Volume != None:
                         n=fii.Number
                         w=None

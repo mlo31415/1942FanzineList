@@ -81,6 +81,7 @@ def Read1942FanzineList():
             if hasDigit:
                 title=startstuff
                 issues=possible
+                possible=""
                 found=True
         if not found:
             # We need to split startStuff

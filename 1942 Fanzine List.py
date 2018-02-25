@@ -218,28 +218,28 @@ for fz in allFanzines1942:  # fz is a FanzineData class object
         if name != None and fz.url != None:
             # We have full information for an eligible zine
             txt="Eligible:  "+name+" ("+editors+") "+fz.issuesText+'     <a href="'+fz.url+'">'+name+"</a>"
-            htm='<i><a href="'+fz.url+'">'+name+'</a></i>&nbsp;&nbsp;<font color="#FF0000">(Eligible)</font>&nbsp;&nbsp;'+" ("+editors+") <br>"+FanacOrgReaders.FormatStuff(fz)
+            htm='<i><a href="'+fz.url+'">'+name+'</a></i>&nbsp;&nbsp;<font color="#FF0000">(Eligible)</font>&nbsp;&nbsp;'+" ("+editors+") <br>"+FanacOrgReaders.FormatIssueSpecs(fz)
         elif name != None and fz.url == None:
             # We're missing a URL for an eligible zine
             txt="Eligible:  "+name+" ("+editors+") "+fz.issuesText
-            htm='<i>'+name+"</i>"+'&nbsp;&nbsp;<font color="#FF0000">(Eligible)</font>&nbsp;&nbsp; ('+editors+") <br>"+FanacOrgReaders.FormatStuff(fz)
+            htm='<i>'+name+"</i>"+'&nbsp;&nbsp;<font color="#FF0000">(Eligible)</font>&nbsp;&nbsp; ('+editors+") <br>"+FanacOrgReaders.FormatIssueSpecs(fz)
         else:
             # We're missing all information from fanac.org for an eligible fanzine -- it isn't there
             txt=name+" ("+editors+") "+fz.issuesText
-            htm='<i>'+name+'</i>&nbsp;&nbsp;<font color="#FF0000">(Eligible)</font>&nbsp;&nbsp; ('+editors+") <br>"+FanacOrgReaders.FormatStuff(fz)
+            htm='<i>'+name+'</i>&nbsp;&nbsp;<font color="#FF0000">(Eligible)</font>&nbsp;&nbsp; ('+editors+") <br>"+FanacOrgReaders.FormatIssueSpecs(fz)
     else:
         if fz.title != None and fz.url != None:
             # We have full information for an ineligible zine
             txt=name+" ("+editors+") "+fz.issuesText+'     <a href="'+fz.url+'">'+fz.title+"</a>"
-            htm='<i><a href="'+fz.url+'">'+fz.title+"</a></i>"+" ("+editors+") <br>"+FanacOrgReaders.FormatStuff(fz)
+            htm='<i><a href="'+fz.url+'">'+fz.title+"</a></i>"+" ("+editors+") <br>"+FanacOrgReaders.FormatIssueSpecs(fz)
         elif fz.title != None and fz.url == None:
             # We're missing a URL for an ineligible item
             txt=name+" ("+editors+") "+fz.issuesText
-            htm='<i>'+name+"</a></i>"+" ("+editors+") <br>"+FanacOrgReaders.FormatStuff(fz)
+            htm='<i>'+name+"</a></i>"+" ("+editors+") <br>"+FanacOrgReaders.FormatIssueSpecs(fz)
         else:
             # We're missing all information from fanac.org for an ineligible fanzine -- it isn't there
             txt=name+" ("+editors+") "+fz.issuesText
-            htm='<i>'+name+"</i> ("+editors+") <br>"+FanacOrgReaders.FormatStuff(fz)
+            htm='<i>'+name+"</i> ("+editors+") <br>"+FanacOrgReaders.FormatIssueSpecs(fz)
     linecount=linecount+1
     if linecount == round(len(allFanzines1942)/2):
         f.write('</td>\n<td valign="top" align="left">\n<ul>')

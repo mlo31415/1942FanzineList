@@ -217,10 +217,9 @@ def InterpretFanzineTable(fanzineName, FanacIssueInfo, fanzineTable, format):
 
 
 #================================================================================================
-# Inline function to format Stuff, which is a list of IssueSpecs
-# Stuff is commonly a list of issue specification interspersed with nonce items
+# Take a list of issue specification interspersed with nonce items and generate HTML
 # For now, we'll attempt only to format what we interpret, above: whole numbers and Vol/# combinations
-def FormatStuff(fz):
+def FormatIssueSpecs(fz):
     if fz.issues == None or fz.issues.len() == 0:
         return fz.issuesText+" "+fz.possible+" "+fz.junk
 

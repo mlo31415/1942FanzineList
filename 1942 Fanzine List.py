@@ -138,7 +138,7 @@ for index in range(0, len(allFanzines1942)):
                         break
                 if locNextVlist == None:
                     locNextVlist=len(stuff)
-                vlist=stuff[:locNextVlist-1]
+                vlist=stuff[:locNextVlist]
                 stuff=stuff[locNextVlist:]
 
                 iss=FanacNames.InterpretVolNumSpecText(vlist)

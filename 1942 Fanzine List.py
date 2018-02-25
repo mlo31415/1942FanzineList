@@ -1,4 +1,5 @@
 import collections
+import re
 import Helpers
 import FanacNames
 import FanacOrgReaders
@@ -144,12 +145,21 @@ for index in range(0, len(allFanzines1942)):
 
                 if iss != None:
                     issueSpecList.Append(iss)
-            break
+            continue
 
+        # This one's complicated:  nnn-nnn, a range of numbers
+        m=re.compile("^(\d+)\s*[\-–]\s*(\d+)$").match(stuff)
+        if m != None and len(m.groups()) == 2:
+            rslt=[]
+            for k in range(int(m.groups()[0]), int(m.groups()[1])+1):
+                rslt.append(FanacNames.IssueSpec().Set1(k))
+            stuff=""
+            issueSpecList.Append(rslt)
+            continue
 
         # It's not a Vn#n sort of thing, but maybe it's a list of whole numbers
         # It must start with a digit
-        elif stuff[0].isdigit():
+        if stuff[0].isdigit():
             loc=stuff.find(",")
             if loc == -1:
                 loc=stuff.find(";")
@@ -181,6 +191,7 @@ for index in range(0, len(allFanzines1942)):
             garbage=stuff[:end]
             stuff=stuff[end:]
             issueSpecList.Append1(FanacNames.IssueSpec().SetUninterpretableText(garbage))
+        continue
 
     print("   "+issueSpecList.Print())
 

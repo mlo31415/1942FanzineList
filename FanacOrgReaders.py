@@ -144,7 +144,7 @@ def ReadAndAppendFanacFanzineIndexPage(fanzineName, directoryUrl, format, fanzin
         print("   Skipping: "+fanzineName)
         return fanzineIssueList
 
-    FanacIssueInfo=collections.namedtuple("FanacIssueInfo", "FanzineName, IssueName, Vol, Number, URL")
+    FanacIssueInfo=collections.namedtuple("FanacIssueInfo", "FanzineName  FanzineIssueName  Vol  Number  URL  Year")
 
     # We're only prepared to read a few formats.  Skip over the others right now.
     OKFormats=((1,1), (1,6))
@@ -217,22 +217,20 @@ def ReadAndAppendFanacFanzineIndexPage(fanzineName, directoryUrl, format, fanzin
     # We need to extract the name, url, year, and vol/issue info for each fanzine
     FanzineInfo=collections.namedtuple("FanzineInfo", "Name, URL, Year, Vol, Num")  # Define a named tuple to hold the info
 
-    rows=InterpretFanzineTable(FanzineInfo, fanzineName, fanzineTable, format)
+    rows=InterpretFanzineTable(fanzineName, FanacIssueInfo, fanzineTable, format)
 
-    # Now select just the fanzines for 1942 and append them to the fanzineIssueList
+    # Now select just the issues for 1942 and append them to the fanzineIssueList
     for row in rows:
         if row.Year == 1942:
-            print("      "+str(row))
-            issue=FanacIssueInfo(FanzineName=fanzineName, URL=row.URL, Number=row.Num, Vol=row.Vol, IssueName=None)
-            print("      1942: ReadAndAppendFanacFanzineIndexPage: appending "+str(issue))
-            fanzineIssueList.append(issue)
+            print("      1942: ReadAndAppendFanacFanzineIndexPage: appending "+str(row))
+            fanzineIssueList.append(row)
 
     return fanzineIssueList
 
 
 # ---------------------------------------------------------
 # Given a fanzine table that has been read in, go through it and generate a list of FanzineInfo rows
-def InterpretFanzineTable(FanzineInfo, fanzineName, fanzineTable, format):
+def InterpretFanzineTable(fanzineName, FanacIssueInfo, fanzineTable, format):
     # We have to treat the Title column specially, since it contains the critical href we need.
     rows=[]
     for row in fanzineTable:
@@ -284,7 +282,7 @@ def InterpretFanzineTable(FanzineInfo, fanzineName, fanzineTable, format):
             if m!=None and len(m.groups())==1:
                 num=int(m.groups()[0])
 
-            fi=FanzineInfo(Name=name, URL=href, Year=year, Vol=None, Num=num)  # (We ignore the Vol and Num for now.)
+            fi=FanacIssueInfo(FanzineName=fanzineName, FanzineIssueName=name, URL=href, Year=year, Vol=None, Number=num)  # (We ignore the Vol and Num for now.)
             print("   (0,0): "+str(fi))
             rows.append(fi)
 
@@ -299,7 +297,7 @@ def InterpretFanzineTable(FanzineInfo, fanzineName, fanzineTable, format):
             p=re.compile("(.*)V([0-9]+),?\s*#([0-9]+)\s*$")
             m=p.match(name)
             if m!=None and len(m.groups())==3:
-                fi=FanzineInfo(Name=fanzineName, URL=href, Year=year, Vol=int(m.groups()[1]), Num=int(m.groups()[2]))
+                fi=FanacIssueInfo(FanzineName=fanzineName, FanzineIssueName=name, URL=href, Year=year, Vol=int(m.groups()[1]), Number=int(m.groups()[2]))
                 print("   (1,6): "+str(fi))
                 rows.append(fi)
     return rows

@@ -368,7 +368,7 @@ def FormatStuff(fz):
         found=False
         v=None
         if issue.Vol == None and issue.Num == None and issue.Whole == None:     # We have neither Vol nor Num.  We have no issue information.
-            v=" (oops) "
+            v=issue.UninterpretableText
 
         # We should either have a Whole (number) or a Vol+Num
         # TODO: Add support for UninterpretableText and TrailingGarbage

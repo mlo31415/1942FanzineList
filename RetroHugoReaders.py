@@ -1,4 +1,4 @@
-import collections
+import FanzineData
 import FanacNames
 import re
 
@@ -7,9 +7,6 @@ import re
 # All we want to do here is extract the fanzines names and add them to the list of named tuples.
 def Read1942FanzineList():
     print("----Begin reading Joe's 1942 Fanzine List.txt")
-
-    # Define a named tuple to hold the data I get from Joe's input file
-    JoesData=collections.namedtuple("JoesData", "Title Editor IssuesText Junk Possible")
 
     # OK, next we open the complete list of 1942 fanzines from Joe Siclari.
     # Each line follows a vague pattern:
@@ -100,11 +97,11 @@ def Read1942FanzineList():
                 title=startstuff
                 issues=""
 
+        print("   startStuff='"+str(startstuff)+"'   title='"+str(title)+"'   editors='"+str(editors)+"'    issuesText='"+str(issues)+"'   junk='"+str(junk)+"'   possible='"+str(possible)+"'   line='"+str(line)+"'")
 
-        print("   startStuff='"+str(startstuff)+"'   title='"+str(title)+"'   editors='"+str(editors)+"'    issues='"+str(issues)+"'   junk='"+str(junk)+"'   possible='"+str(possible)+"'   line='"+str(line)+"'")
-
-
-        allFanzines1942.append(JoesData(Title=title, Editor=editors, IssuesText=issues, Junk=junk, Possible=possible))
+        fd=FanzineData.FanzineData()
+        fd.SetJoesData(title, editors, issues, junk, possible)
+        allFanzines1942.append(fd)
         FanacNames.AddJoesName(line[:loc1-1])
 
 

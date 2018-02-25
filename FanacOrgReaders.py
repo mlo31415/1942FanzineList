@@ -291,9 +291,6 @@ def ReadAndAppendFanacFanzineIndexPage(fanzineName, directoryUrl, format, fanzin
                 print("   (1,6): "+str(fi))
                 rows.append(fi)
 
-
-#     FanacIssueInfo=collections.namedtuple("FanacIssueInfo", "FanzineName, IssueName, Vol, Number, URL")
-
     # Now select just the fanzines for 1942 and append them to the fanzineIssueList
     for row in rows:
         if row.Year == 1942:
@@ -412,14 +409,14 @@ class ExternalLinks:
 # Stuff is commonly a list of issue specification interspersed with nonce items
 # For now, we'll attempt only to format what we interpret, above: whole numbers and Vol/# combinations
 def FormatStuff(fz):
-    if fz.Issues == None or fz.Issues.len() == 0:
-        return fz.IssuesText+" "+fz.Possible+" "+fz.Junk
+    if fz.issues == None or fz.issues.len() == 0:
+        return fz.issuesText+" "+fz.possible+" "+fz.junk
 
-    print("   FormatStuff: fz.Name="+str(fz.Title)+"  fz.FanacDirName="+str(fz.FanacDirName)+"   fz.Stuff="+fz.Issues.Print())
+    print("   FormatStuff: fz.name="+str(fz.title)+"  fz.fanacDirName="+str(fz.fanacDirName)+"   fz.stuff="+fz.issues.Print())
 
     out=""
     # Our job here is to turn this into HTML which includes links for those issues which have links.
-    for issue in fz.Issues.List():
+    for issue in fz.issues.List():
         # issue is a tuple of a vol and a num.
         # If both exists, it is a Vn#n pair
         # If V is none, then num is a whole number.
@@ -437,7 +434,7 @@ def FormatStuff(fz):
         # TODO: Add support for UninterpretableText and TrailingGarbage
         elif issue.Whole != None:     # We have Num, but not Vol
             # Look up the fanzine to see if it is on fanac.org. Then look up the Vol/Issue to see if the specific issue is there.
-            name = fz.FanacFanzineName or fz.Title
+            name = fz.fanacFanzineName or fz.title
 
             # Check the table of all fanzines issues on fanac.org to see if there is a match for fanzine-vol-issue
             url=None
@@ -454,7 +451,10 @@ def FormatStuff(fz):
                     print("   FormatStuff: Found on fanac: issue="+str(issue.Whole)+"  url="+url)
                     break
             if url != None:
-                v=Helpers.FormatLink("#"+str(issue.Whole), Helpers.CreateFanacOrgAbsolutePath(fz.FanacDirName, url))
+                garbage=""
+                if issue.TrailingGarbage != None:
+                    garbage=issue.TrailingGarbage
+                v=Helpers.FormatLink("#"+str(issue.Whole)+garbage, Helpers.CreateFanacOrgAbsolutePath(fz.fanacDirName, url))
 
 
             # If we couldn't find anything on fanac.org, look for an external link
@@ -478,7 +478,7 @@ def FormatStuff(fz):
         else:
             # We don't have issue.Whole, so we must have both vol and num
             # Look up the fanzine to see if it is on fanac.org. Then look up the Vol/Issue to see if the specific issue is there.
-            name = fz.FanacFanzineName or fz.Title
+            name = fz.fanacFanzineName or fz.title
 
             # Check the table of all fanzines issues on fanac.org to see if there is a match for fanzine-vol-issue
             url=None
@@ -495,7 +495,7 @@ def FormatStuff(fz):
                     print("   FormatStuff: Found on fanac: vol="+str(issue.Vol)+" issue="+str(issue.Num)+"  url="+url)
                     break
             if url != None:
-                v=Helpers.FormatLink("V"+str(issue.Vol)+"#"+str(issue.Num), Helpers.CreateFanacOrgAbsolutePath(fz.FanacDirName, url))
+                v=Helpers.FormatLink("V"+str(issue.Vol)+"#"+str(issue.Num), Helpers.CreateFanacOrgAbsolutePath(fz.fanacDirName, url))
 
 
             # If we couldn't find anything on fanac.org, look for an external link

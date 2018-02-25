@@ -199,8 +199,8 @@ class IssueSpec:
         self.Vol=None
         self.Num=None
         self.Whole=None
-        self.UninterpretableText=None
-        self.TrailingGarbage=None
+        self.UninterpretableText=None   # Ok, I give up.  Just hold the text as text.
+        self.TrailingGarbage=None       # The uninterpretable stuff following the interpretable spec held in this instance
 
     def Set2(self, v, n):
         self.Vol=v

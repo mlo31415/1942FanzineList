@@ -1,10 +1,9 @@
-from bs4 import BeautifulSoup
-import requests
 import collections
 import Helpers
 import FanacNames
 import FanacOrgReaders
 import RetroHugoReaders
+import FanzineData
 
 #--------------------------------------
 # Overall Strategy
@@ -44,14 +43,11 @@ print("----Begin combining information into one table.")
 #   2. We link each issue number to the individual issue
 #   3. We highlight those fanzines which are eligible for a 1942 Hugo
 
-# Define a named tuple to hold the expanded data I get by combining all the sources
-ExpandedData=collections.namedtuple("ExpandedData", "Title Editor IssuesText Junk Possible IsHugoEligible FanacDirName FanacFanzineName URL Issues")
-
 for i in range(0, len(allFanzines1942)):
     fanzine=allFanzines1942[i]
 
     # First we take the fanzine name from Joe's 1942 Fanzine List.txt and match it to a 1942 fanzine on fanac.org
-    jTitle=fanzine.Title
+    jTitle=fanzine.title
 
     isHugoEligible=False        # Joe has tagged Hugo-eligible fanzines by making their name to be all-caps
     if jTitle == jTitle.upper():
@@ -69,11 +65,13 @@ for i in range(0, len(allFanzines1942)):
     else:
         print("   Not found in g_FanacDirectories: "+jTitle)
 
+    allFanzines1942[i].SetIsHugoEligible(isHugoEligible)
     if name != None:
         # Update the 1942 fanzines list with the new information
-        allFanzines1942[i]=ExpandedData(Title=fanzine.Title, Editor=fanzine.Editor, IssuesText=fanzine.IssuesText, Junk=fanzine.Junk, Possible=fanzine.Possible, IsHugoEligible=isHugoEligible, FanacDirName=url, FanacFanzineName=name, URL=Helpers.RelPathToURL(url), Issues=None)
-    else:
-        allFanzines1942[i]=ExpandedData(Title=fanzine.Title, Editor=fanzine.Editor, IssuesText=fanzine.IssuesText, Junk=fanzine.Junk, Possible=fanzine.Possible, IsHugoEligible=isHugoEligible, FanacDirName=None, FanacFanzineName=None, URL=None, Issues=None)
+        allFanzines1942[i].SetFanacDirName(url)
+        allFanzines1942[i].SetFanacFanzineName(name)
+        allFanzines1942[i].SetURL(Helpers.RelPathToURL(url))
+
 
 del fanzine, jTitle, name, url, i, isHugoEligible, tpl
 print("----Done combining information into one table.")
@@ -84,12 +82,12 @@ print("----Begin decoding issue list in list of all 1942 fanzines")
 # Define a named tuple to hold the an issue number
 IssueNumber=collections.namedtuple("IssueNumber", "Vol Num")
 
-# OK, now the problem is to decode the crap at the end to form a list of issue numbers...or something...
+# OK, now the problem is to decode the crap to form a list of issue numbers...or something...
 for index in range(0, len(allFanzines1942)):
     fz=allFanzines1942[index]
     print("   Decoding issue list: "+ str(fz))
 
-    stuff=fz.IssuesText
+    stuff=fz.issuesText
     if stuff == None:    # Skip empty stuff
         continue
     if len("".join(stuff.split())) == 0: # Skip if it's all whitespace by splitting on whitespace, joining the remnants and counting the remaining characters
@@ -98,12 +96,14 @@ for index in range(0, len(allFanzines1942)):
     # Turn all multiple spaces into a single space
     stuff=stuff.replace("  ", " ").replace("  ", " ").replace("  ", " ").strip()   # Hopefully there's never more than 8 spaces in succession...
 
-    issueSpecList=FanacNames.IssueSpecList()   # This will be the resulting list of IssueSpecs
+    issueSpecList=FanacNames.IssueSpecList()   # This will be the list of IssueSpecs resulting from interpreting stuff
 
     # Cases:
     #   1,2,3,4
     #   V1#2, V3#4
     #   V1#2,3 or V1:2,3
+    #   1942:5
+    #   210-223
     #   Sometimes a semicolon is used as a separator....
     #   The different representations can be intermixed.  This causes a problem because the comma winds up having different meanings in different cases.
     #   Stuff in parentheses will always be treated as comments
@@ -126,7 +126,7 @@ for index in range(0, len(allFanzines1942)):
 
         # If the first character is a "V", we have a volume followed by one or more issues all in that volume
         # Sometimes there will be another Vn indicating a new volume
-        # A V which begins a volum-num sequence *always* has the pattern <delimiter>V<digit>, where start-of-line counts as a delimiter.
+        # A V which begins a volume-num sequence *always* has the pattern <delimiter>V<digit>, where start-of-line counts as a delimiter.
         # Because we've trimmed off leading whitespace, we can detected the first:
         if (len(stuff) > 1 and stuff[0].lower() == "v" and stuff[1].isdigit()):
             while len(stuff)>0:
@@ -185,7 +185,7 @@ for index in range(0, len(allFanzines1942)):
 
     print("   "+issueSpecList.Print())
 
-    allFanzines1942[index]=allFanzines1942[index]._replace(Issues=issueSpecList)
+    allFanzines1942[index].SetIssues(issueSpecList)    # Just update the one field
 
 
 del i, stuff, iss, loc, issueSpecs, index, fz, end, garbage, parenLevel, vlist, locNextVlist
@@ -209,38 +209,38 @@ f.write('<ul>\n')
 
 # Create the HTML file
 linecount=0
-for fz in allFanzines1942:
+for fz in allFanzines1942:  # fz is a FanzineData class object
     print("   Writing HTML for: "+str(fz))
 
     htm=None
-    if fz.IsHugoEligible:
-        name=fz.Title.title()    # Joe has eligible name all in UC.   Make them normal title case.
-        if name != None and fz.URL != None:
+    if fz.isHugoEligible:
+        name=fz.title.title()    # Joe has eligible name all in UC.   Make them normal title case.
+        if name != None and fz.url != None:
             # We have full information for an eligible zine
-            txt="Eligible:  "+name+" ("+fz.Editor+") "+fz.IssuesText+'     <a href="'+fz.URL+'">'+name+"</a>"
-            htm='<i><a href="'+fz.URL+'">'+name+'</a></i>&nbsp;&nbsp;<font color="#FF0000">(Eligible)</font>&nbsp;&nbsp;'+" ("+fz.Editor+") <br>"+FanacOrgReaders.FormatStuff(fz)
-        elif name != None and fz.URL == None:
+            txt="Eligible:  "+name+" ("+fz.editors+") "+fz.issuesText+'     <a href="'+fz.url+'">'+name+"</a>"
+            htm='<i><a href="'+fz.url+'">'+name+'</a></i>&nbsp;&nbsp;<font color="#FF0000">(Eligible)</font>&nbsp;&nbsp;'+" ("+fz.editors+") <br>"+FanacOrgReaders.FormatStuff(fz)
+        elif name != None and fz.url == None:
             # We're missing a URL for an eligible zine
-            txt="Eligible:  "+name+" ("+fz.Editor+") "+fz.IssuesText
-            htm='<i>'+name+"</i>"+'&nbsp;&nbsp;<font color="#FF0000">(Eligible)</font>&nbsp;&nbsp; ('+fz.Editor+") <br>"+FanacOrgReaders.FormatStuff(fz)
+            txt="Eligible:  "+name+" ("+fz.editors+") "+fz.issuesText
+            htm='<i>'+name+"</i>"+'&nbsp;&nbsp;<font color="#FF0000">(Eligible)</font>&nbsp;&nbsp; ('+fz.editors+") <br>"+FanacOrgReaders.FormatStuff(fz)
         else:
             # We're missing all information from fanac.org for an eligible fanzine -- it isn't there
-            txt=name+" ("+fz.Editor+") "+fz.IssuesText
-            htm='<i>'+name+'</i>&nbsp;&nbsp;<font color="#FF0000">(Eligible)</font>&nbsp;&nbsp; ('+fz.Editor+") <br>"+FanacOrgReaders.FormatStuff(fz)
+            txt=name+" ("+fz.editors+") "+fz.issuesText
+            htm='<i>'+name+'</i>&nbsp;&nbsp;<font color="#FF0000">(Eligible)</font>&nbsp;&nbsp; ('+fz.editors+") <br>"+FanacOrgReaders.FormatStuff(fz)
     else:
-        name=fz.Title.title()
-        if fz.Title != None and fz.URL != None:
+        name=fz.title.title()
+        if fz.title != None and fz.url != None:
             # We have full information for an ineligible zine
-            txt=name+" ("+fz.Editor+") "+fz.IssuesText+'     <a href="'+fz.URL+'">'+fz.Title+"</a>"
-            htm='<i><a href="'+fz.URL+'">'+fz.Title+"</a></i>"+" ("+fz.Editor+") <br>"+FanacOrgReaders.FormatStuff(fz)
-        elif fz.Title != None and fz.URL == None:
+            txt=name+" ("+fz.editors+") "+fz.issuesText+'     <a href="'+fz.url+'">'+fz.title+"</a>"
+            htm='<i><a href="'+fz.url+'">'+fz.title+"</a></i>"+" ("+fz.editors+") <br>"+FanacOrgReaders.FormatStuff(fz)
+        elif fz.title != None and fz.url == None:
             # We're missing a URL for an ineligible item
-            txt=name+" ("+fz.Editor+") "+fz.IssuesText
-            htm='<i>'+name+"</a></i>"+" ("+fz.Editor+") <br>"+FanacOrgReaders.FormatStuff(fz)
+            txt=name+" ("+fz.editors+") "+fz.issuesText
+            htm='<i>'+name+"</a></i>"+" ("+fz.editors+") <br>"+FanacOrgReaders.FormatStuff(fz)
         else:
             # We're missing all information from fanac.org for an ineligible fanzine -- it isn't there
-            txt=name+" ("+fz.Editor+") "+fz.IssuesText
-            htm='<i>'+name+"</i> ("+fz.Editor+") <br>"+FanacOrgReaders.FormatStuff(fz)
+            txt=name+" ("+fz.editors+") "+fz.issuesText
+            htm='<i>'+name+"</i> ("+fz.editors+") <br>"+FanacOrgReaders.FormatStuff(fz)
     linecount=linecount+1
     if linecount == round(len(allFanzines1942)/2):
         f.write('</td>\n<td valign="top" align="left">\n<ul>')
@@ -259,8 +259,8 @@ f.close()
 f2=open("1942 Fanzines Not on fanac.txt", "w")
 f2.write("1942 Fanzines not on fanac.org\n\n")
 for fz in allFanzines1942:
-    if fz.FanacDirName == None or fz.URL == None:
-        f2.write(fz.Title+"\n")
+    if fz.fanacDirName == None or fz.url == None:
+        f2.write(fz.title+"\n")
 f2.flush()
 f2.close()
 del f2, htm, txt, fz

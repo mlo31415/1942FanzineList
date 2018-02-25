@@ -179,7 +179,7 @@ for index in range(0, len(allFanzines1942)):
                 end=len(stuff)
             garbage=stuff[:end]
             stuff=stuff[end:]
-            issueSpecList.Append1(FanacNames.IssueSpec().SetGarbage(garbage))
+            issueSpecList.Append1(FanacNames.IssueSpec().SetUninterpretableText(garbage))
 
     print("   "+issueSpecList.Print())
 

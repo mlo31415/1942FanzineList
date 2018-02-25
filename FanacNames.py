@@ -211,7 +211,7 @@ class IssueSpec:
         self.Whole=w
         return self
 
-    def SetGarbage(self, str):
+    def SetUninterpretableText(self, str):
         self.UninterpretableText=str
         return self
 
@@ -336,7 +336,9 @@ def InterpretWholenumSpecText(specStr):
     p=re.compile("^(\d+)(.*)$")
     m=p.match(specStr)
     if m!=None and len(m.groups()) == 2:
-        return InterpretWholenumSpecText(m.groups()[0])
+        ispeclist=InterpretWholenumSpecText(m.groups()[0])
+        ispeclist[0].SetTrailingGarbage(m.groups()[1])
+        return ispeclist
 
     print("oops: "+specStr)
     return None

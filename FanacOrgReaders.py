@@ -368,13 +368,16 @@ def FormatStuff(fz):
         found=False
         v=None
         if issue.Vol == None and issue.Num == None and issue.Whole == None:     # We have neither Vol nor Num.  We have no issue information.
-            v="(oops)"
+            v=" (oops) "
 
         # We should either have a Whole (number) or a Vol+Num
         # TODO: Add support for UninterpretableText and TrailingGarbage
         elif issue.Whole != None:     # We have Num, but not Vol
             # Look up the fanzine to see if it is on fanac.org. Then look up the Vol/Issue to see if the specific issue is there.
             name = fz.fanacFanzineName or fz.title
+            garbage=""
+            if issue.TrailingGarbage!=None:
+                garbage=issue.TrailingGarbage
 
             # Check the table of all fanzines issues on fanac.org to see if there is a match for fanzine-vol-issue
             url=None
@@ -390,10 +393,8 @@ def FormatStuff(fz):
                     text=str(issue.Whole)
                     print("   FormatStuff: Found on fanac: issue="+str(issue.Whole)+"  url="+url)
                     break
+
             if url != None:
-                garbage=""
-                if issue.TrailingGarbage != None:
-                    garbage=issue.TrailingGarbage
                 v=Helpers.FormatLink("#"+str(issue.Whole)+garbage, Helpers.CreateFanacOrgAbsolutePath(fz.fanacDirName, url))
 
 
@@ -406,11 +407,11 @@ def FormatStuff(fz):
                         print("   FormatStuff: Found external: issue="+str(issue.Whole)+"  url="+url)
                         found=True
                         if url!=None:
-                            v=Helpers.FormatLink("#"+str(issue.Whole), url)
+                            v=Helpers.FormatLink("#"+str(issue.Whole)+garbage, url)
 
             if v == None:
                 # No luck anywhere
-                v="#"+str(issue.Whole)
+                v="#"+str(issue.Whole)+garbage
                 print("   No luck anywhere: "+v)
 
 

@@ -133,14 +133,18 @@ for index in range(0, len(allFanzines1942)):
             while len(stuff)>0:
                 # Look for the termination of the first Volume-num list. It ends at another Volume-Num list or at eol
                 locNextVlist=None
+                i=0
                 for i in range(1, len(stuff)-3):
                     if (stuff[i-1] == " " or stuff[i-1] == ";") and stuff[i].lower() == "v" and stuff[i+1].isdigit():
                         locNextVlist=i
                         break
-                if locNextVlist == None:
-                    locNextVlist=len(stuff)
-                vlist=stuff[:locNextVlist]
-                stuff=stuff[locNextVlist:]
+                if locNextVlist != None:
+                    vlist=stuff[:locNextVlist-2]
+                    stuff=stuff[locNextVlist:]
+                else:
+                    vlist=stuff
+                    stuff=""
+
 
                 iss=FanacNames.InterpretVolNumSpecText(vlist)
 

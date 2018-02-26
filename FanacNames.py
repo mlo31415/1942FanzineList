@@ -206,36 +206,36 @@ def InterpretVolNumSpecText(specStr):
     #   Vnn:nn
     #   Vnn#nn,nn,nn
     #   Vnn:nn,nn,nn
-
-    try:
-        # First split the Volume and Number parts on the '#' or ':'
-        loc=specStr.find("#")
-        if loc == -1:
-            loc=specStr.find(":")
-
-        # Do we have a volume+number-type spec?
-        if loc != -1:
-            vstr=specStr[1:loc]  # Remove the 'V'
-            vol=int(vstr)
-
-            nstr=specStr[loc+1:]
-            # This could be either a single number or a comma-separated string of numbers
-            nlist=nstr.split(",")
-            if len(nlist) == -1:
-                num=int(nlist)
-                return [IssueSpec().Set2(vol, num)]
+    isl=[]
+    while len(specStr) > 0:
+        try:
+            c=re.compile(r"""^[vV](\d+)     # Begin with a V followed by 1 or more digits
+                        [#:]\s*             # Then a '#' or a ':' followed by option whitespace
+                        ((?:\d+,\s*)*)      # Then a non-capturing group of one or more digits followed by a comma followed by optional whitespace -- this whole thing is a group
+                        (\d+,?)(.*)         # Then a last group of digits followed by an optional comma followed by the end of the line
+                        """, re.X)
+            m=c.match(specStr)
+            if len(m.groups()) != 4:
+                print("Problem!")
             else:
-                isl=[]
-                for n in nlist:
-                    isl.append(IssueSpec().Set2(vol, int(n)))
-                return isl
+                vol=int(m.groups()[0])
+                iList=m.groups()[1]+m.groups()[2]
+                specStr=m.groups()[3]
+                iList=iList.replace(" ", "").split(",")
+                for i in iList:
+                    t=IssueSpec.IssueSpec()
+                    t.Set2(vol, int(i))
+                    isl.append(t)
 
-        # OK, since there was no delimiter, we have a single issue number
-        return [IssueSpec().Set1(int(specStr))]
+        except:
+            print("oops: "+specStr)
+            specStr=""
+            break
 
-    except:
-        print("oops: "+specStr)
-        return None
+    if isl != None and len(isl) > 0:
+        return isl
+    return None
+
 
 
 # This takes one issue text string (which may specify multiple issues) and interpret it.

@@ -1,4 +1,5 @@
 import FanacNames
+import IssueSpec
 
 # Define a class to hold the data I get for a particular fanzine by combining all the sources
 
@@ -13,7 +14,7 @@ class FanzineData:
         self.fanacDirName=None
         self.fanacFanzineName=None
         self.url=None
-        self.issues=FanacNames.IssueSpecList()  # Initialize to an empty list
+        self.issues=IssueSpec.IssueSpecList()  # Initialize to an empty list
 
     def SetIsHugoEligible(self, val):
         self.isHugoEligible=val
@@ -33,7 +34,7 @@ class FanzineData:
 
     def SetIssues(self, val):
         if val == None:
-            val=FanacNames.IssueSpecList()
+            val=IssueSpec.IssueSpecList()
         self.issues=val
         return self
 

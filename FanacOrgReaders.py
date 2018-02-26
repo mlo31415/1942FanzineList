@@ -29,7 +29,7 @@ def ReadFanacFanzineIssues():
 
         # Get the index file format for this directory
         format=FanacDirectoryFormats.FanacDirectoryFormats().GetFormat(dirname.lower())
-        print("   Format: "+title+" --> "+FanacNames.StandardizeName(title.lower())+" --> "+str(format))
+        print("   Format: "+title+" --> "+FanacNames.FanacNames().StandardizeName(title.lower())+" --> "+str(format))
 
         if format == (8, 0):
             print("   Skipped because no index.html file: "+ dirname)
@@ -273,7 +273,7 @@ def FormatIssueSpecs(fz):
             if v == None:
                 # We have a name, and a whole number.  See if they turn up as an external link]
                 for ext in ExternalLinks.ExternalLinks().List():
-                    if FanacNames.CompareNames(ext.Title, name) and int(ext.Whole_Number) == issue.Whole:
+                    if FanacNames.FanacNames().CompareNames(ext.Title, name) and int(ext.Whole_Number) == issue.Whole:
                         url=ext.URL
                         print("   FormatStuff: Found external: issue="+str(issue.Whole)+"  url="+url)
                         found=True

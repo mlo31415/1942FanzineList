@@ -103,7 +103,7 @@ def Read1942FanzineList():
         fd=FanzineData.FanzineData()
         fd.SetJoesData(title, editors, issues, junk, possible)
         allFanzines1942.append(fd)
-        FanacNames.AddJoesName(line[:loc1-1])
+        FanacNames.FanacNames().AddJoesName(line[:loc1-1])
 
 
     f.close()

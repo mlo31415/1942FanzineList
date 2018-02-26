@@ -5,6 +5,7 @@ import FanacNames
 import FanacOrgReaders
 import RetroHugoReaders
 import FanacDirectories
+import IssueSpec
 
 #--------------------------------------
 # Overall Strategy
@@ -26,7 +27,7 @@ import FanacDirectories
 
 # Create the list of FanacName tuples which will be used by FanacName functions
 # Note: This is just to get the names and directories, nothing else.
-FanacNames.AddFanacDirectories(FanacDirectories.FanacDirectories().Dict())      # Add them to g_fanacNameTuples, which is managed and accessed by FanacNames
+FanacNames.FanacNames().AddFanacDirectories(FanacDirectories.FanacDirectories().Dict())      # Add them to g_fanacNameTuples, which is managed and accessed by FanacNames
 
 # Read Joe's PDF and create a list of tuples, each representing one of the complete set of fanzines of 1942
 # The three items of the tuple are the fanzine name, the fanzine editors, andf the fanzine issue data.
@@ -96,7 +97,7 @@ for index in range(0, len(allFanzines1942)):
     # Turn all multiple spaces into a single space
     stuff=stuff.replace("  ", " ").replace("  ", " ").replace("  ", " ").strip()   # Hopefully there's never more than 8 spaces in succession...
 
-    issueSpecList=FanacNames.IssueSpecList()   # This will be the list of IssueSpecs resulting from interpreting stuff
+    issueSpecList=IssueSpec.IssueSpecList()   # This will be the list of IssueSpecs resulting from interpreting stuff
 
     # Cases:
     #   1,2,3,4
@@ -152,7 +153,7 @@ for index in range(0, len(allFanzines1942)):
         if m != None and len(m.groups()) == 2:
             rslt=[]
             for k in range(int(m.groups()[0]), int(m.groups()[1])+1):
-                rslt.append(FanacNames.IssueSpec().Set1(k))
+                rslt.append(IssueSpec.IssueSpec().Set1(k))
             stuff=""
             issueSpecList.Append(rslt)
             continue
@@ -190,7 +191,7 @@ for index in range(0, len(allFanzines1942)):
                 end=len(stuff)
             garbage=stuff[:end]
             stuff=stuff[end:]
-            issueSpecList.Append1(FanacNames.IssueSpec().SetUninterpretableText(garbage))
+            issueSpecList.Append1(IssueSpec.IssueSpec().SetUninterpretableText(garbage))
         continue
 
     print("   "+issueSpecList.Print())

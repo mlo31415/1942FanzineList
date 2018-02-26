@@ -164,7 +164,7 @@ def FormatLink(name, url):
 #==================================================================================
 # Compare a filename, volume and number with a second set
 def CompareIssueSpec(name1, vol1, num1, whole1, name2, vol2, num2, whole2):
-    if not FanacNames.CompareNames(name1, name2):
+    if not FanacNames.FanacNames().CompareNames(name1, name2):
         return False
     if (vol1 != vol2):
         return False

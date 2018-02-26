@@ -157,7 +157,7 @@ def InterpretFanzineTable(fanzineName, FanacIssueInfo, fanzineTable, format):
             elif "Date" in row._fields:
                 date=Helpers.InterpretDateString(row.Date)
                 if date!=None:
-                    year=date.Year
+                    year=date.year
         except:
             year=None  # Gotta have *some* code in the except clause
 

@@ -223,7 +223,7 @@ def FormatIssueSpecs(fz):
     if fz.issues == None or fz.issues.len() == 0:
         return fz.issuesText+" "+fz.possible+" "+fz.junk
 
-    print("   FormatStuff: fz.name="+str(fz.title)+"  fz.fanacDirName="+str(fz.fanacDirName)+"   fz.stuff="+fz.issues.Print())
+    print("   FormatStuff: fz.name="+str(fz.title)+"  fz.fanacDirName="+str(fz.fanacDirName)+"   fz.stuff="+fz.issues.Str())
 
     out=""
     # Our job here is to turn this into HTML which includes links for those issues which have links.

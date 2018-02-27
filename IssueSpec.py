@@ -24,7 +24,7 @@ class IssueSpec:
         self.TrailingGarbage=str
         return self
 
-    def Print(self):
+    def Str(self):
         if self.UninterpretableText != None:
             return "IS("+self.UninterpretableText+")"
 
@@ -58,13 +58,13 @@ class IssueSpecList:
     def Append(self, isl):
         self.list.extend(isl)
 
-    def Print(self):
+    def Str(self):
         s=""
         for i in self.list:
             if len(s) > 0:
                 s=s+", "
             if i != None:
-                s=s+i.Print()
+                s=s+i.Str()
             else:
                 s=s+"Missing ISlist"
         if len(s) == 0:

@@ -86,7 +86,7 @@ IssueNumber=collections.namedtuple("IssueNumber", "Vol Num")
 # OK, now the problem is to decode the crap to form a list of issue numbers...or something...
 for index in range(0, len(allFanzines1942)):
     fz=allFanzines1942[index]
-    print("   Decoding issue list: "+ str(fz))
+    print("   Decoding issue list: "+ fz.Str())
 
     stuff=fz.issuesText
     if stuff == None:    # Skip empty stuff
@@ -119,91 +119,79 @@ for index in range(0, len(allFanzines1942)):
     #   A range of whole numbers
     #   A list of year:issue pairs
     #  In all cases we need to be prepared to deal with (and preserve) random text.
-    iss=[]
-    while len(stuff) > 0:
+    c_VnnNnn=re.compile(r"""^       # Start at the beginning
+                [vV](\d+\s*)        # Look for a V followed by 1 or more digits
+                [#:]\s*             # Then a '#' or a ':' followed by option whitespace
+                ((?:\d+,\s*)*)      # Then a non-capturing group of one or more digits followed by a comma followed by optional whitespace -- this whole thing is a group
+                (\d+[;,]?)(.*)      # Then a last group of digits followed by an optional comma followed by the rest of the line
+                """, re.X)
 
+    c_range=re.compile("^(\d+)\s*[\-–]\s*(\d+)$")
+
+    c_list=re.compile(r"""^             # Starting at the beginning
+                        ((?:            # Deal with repetitions
+                        [\d+,\w*])*)    # of a string of digits followed by a mandatory single comma, folled by optional whitespace.  This is all one group
+                        (\d+,?)(.*)     # Then a last group of digits followed by an optional comma followed by the rest of the line                       
+                         """, re.X)
+
+    while len(stuff) > 0:
         issueSpecs=None
+        isl=[]
         stuff=stuff.strip()  # Leading and trailing whitespace is uninteresting
 
-        # If the first character is a "V", we have a volume followed by one or more issues all in that volume
-        # Sometimes there will be another Vn indicating a new volume
-        # A V which begins a volume-num sequence *always* has the pattern <delimiter>V<digit>, where start-of-line counts as a delimiter.
-        # Because we've trimmed off leading whitespace, we can detected the first:
-        if (len(stuff) > 1 and stuff[0].lower() == "v" and stuff[1].isdigit()):
-            while len(stuff)>0:
-                # Look for the termination of the first Volume-num list. It ends at another Volume-Num list or at eol
-                locNextVlist=None
-                i=0
-                for i in range(1, len(stuff)-3):
-                    if (stuff[i-1] == " " or stuff[i-1] == ";") and stuff[i].lower() == "v" and stuff[i+1].isdigit():
-                        locNextVlist=i
-                        break
-                if locNextVlist != None:
-                    vlist=stuff[:locNextVlist-2]
-                    stuff=stuff[locNextVlist:]
+         # OK, now try to decode the spec and return a list (possibly of length 1) of IssueSpecs
+        # It could be
+        #   Vnn#nn
+        #   Vnn:nn
+        #   Vnn#nn,nn,nn
+        #   Vnn:nn,nn,nn
+        m=c_VnnNnn.match(stuff)
+        if m!= None and len(m.groups()) == 4:
+            vol=int(m.groups()[0])
+            iList=m.groups()[1]+m.groups()[2]
+            stuff=m.groups()[3]
+            iList=iList.replace(" ", "").replace(";", ",").split(",")   # Split on either ',' or ':'
+            for i in iList:
+                if len(i) == 0:
+                    continue
+                t=IssueSpec.IssueSpec()
+                t.Set2(vol, int(i))
+                isl.append(t)
+
+        else:
+            # Deal with a range of numbers, nnn-nnn
+            m=c_range.match(stuff)
+            if m != None and len(m.groups()) == 2:
+                for k in range(int(m.groups()[0]), int(m.groups()[1])+1):
+                    isl.append(IssueSpec.IssueSpec().Set1(k))
+                stuff=""
+
+            else:
+                # It's not a Vn#n sort of thing, but maybe it's a list of whole numbers
+                # It must start with a digit and contain no other characters than whitespace and commas.
+                m=c_list.match(stuff)
+                if m != None and len(m.groups()) == 3:
+                    iList=m.groups()[0]+m.groups()[1]
+                    stuff=m.groups()[2]
+                    iList=iList.replace(" ", "").replace(";", ",").split(",")  # Split on either ',' or ':'
+                    for i in iList:
+                        if len(i)==0:
+                            continue
+                        t=IssueSpec.IssueSpec()
+                        t.Set1(int(i))
+                        isl.append(t)
+                # OK, it's probably junk. Absorb everything until the next V-spec or digit
                 else:
-                    vlist=stuff
+                    isl=[IssueSpec.IssueSpec().SetUninterpretableText(stuff)]
                     stuff=""
 
+        if len(isl) > 0:
+            issueSpecList.Append(isl)
 
-                iss=FanacNames.InterpretVolNumSpecText(vlist)
-
-                if iss != None:
-                    issueSpecList.Append(iss)
-            continue
-
-        # Deal with a range of numbers, nnn-nnn
-        m=re.compile("^(\d+)\s*[\-–]\s*(\d+)$").match(stuff)
-        if m != None and len(m.groups()) == 2:
-            rslt=[]
-            for k in range(int(m.groups()[0]), int(m.groups()[1])+1):
-                rslt.append(IssueSpec.IssueSpec().Set1(k))
-            stuff=""
-            issueSpecList.Append(rslt)
-            continue
-
-        # It's not a Vn#n sort of thing, but maybe it's a list of whole numbers
-        # It must start with a digit
-        if stuff[0].isdigit():
-            loc=stuff.find(",")
-            if loc == -1:
-                loc=stuff.find(";")
-                if loc == -1:   # Must be eol
-                    loc=len(stuff)
-            rslt=FanacNames.InterpretWholenumSpecText(stuff[:loc])
-            if rslt != None:
-                issueSpecList.Append(rslt)
-                stuff=stuff[loc+1:]
-            else:
-                print("***FanacNames.InterpretWholenumSpecText returned None from"+stuff[:loc-1])
-
-        # OK, it's probably junk. Absorb everything until the next V-spec or digit
-        else:
-            parenLevel=0
-            end=None
-            for i in range(0, len(stuff)):
-                if stuff[i] == "(":
-                    parenLevel=parenLevel+1
-                if stuff[i] == ")":
-                    parenLevel=parenLevel+1
-                if parenLevel > 0:
-                    continue    # If we're inside a parenthesis, anything goes until we're out of it again.
-                if stuff[i].lower() == 'v' or stuff[i].isdigit():
-                    end=i
-                    break
-            if end == None:
-                end=len(stuff)
-            garbage=stuff[:end]
-            stuff=stuff[end:]
-            issueSpecList.Append1(IssueSpec.IssueSpec().SetUninterpretableText(garbage))
-        continue
-
-    print("   "+issueSpecList.Print())
-
+    print("   "+issueSpecList.Str())
     allFanzines1942[index].SetIssues(issueSpecList)    # Just update the one field
 
-
-del i, stuff, iss, loc, issueSpecs, index, fz, end, garbage, parenLevel, vlist, locNextVlist
+del i, stuff, t, issueSpecs, index, fz, k, iList, issueSpecList, m, c_VnnNnn, c_range, c_list
 print("----Done decoding issue list in list of all 1942 fanzines")
 
 
@@ -229,12 +217,10 @@ for fz in allFanzines1942:  # fz is a FanzineData class object
         listoftitles.append(fz.title)
 numTitles=len(listoftitles)
 
-
-
 # Create the HTML file
 listoftitles=[]     # Empty it so we can again add titles to it as we find them
 for fz in allFanzines1942:  # fz is a FanzineData class object
-    print("   Writing HTML for: "+str(fz))
+    print("   Writing HTML for: "+fz.Str())
 
     htm=None
     name=FanacNames.CapitalizeFanzine(fz.title)  # Joe has eligible name all in UC.   Make them normal title case.

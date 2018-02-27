@@ -46,3 +46,7 @@ class FanzineData:
         self.possible=possible
         return self
 
+    def Str(self):
+        return "FanzineData(title="+str(self.title)+"  issuesTxt="+str(self.issuesText)+"  ed="+str(self.editor)+"  junk="+str(self.junk)+"  poss="+str(self.possible)+ \
+               "  isHElig="+str(self.isHugoEligible)+"  fzDirName="+str(self.fanacDirName)+"  fanacFzName="+str(self.fanacFanzineName)+"  url="+str(self.url)+ \
+               "  issues="+self.issues.Str()

@@ -166,14 +166,25 @@ def FormatLink(name, url):
 def CompareIssueSpec(name1, vol1, num1, whole1, name2, vol2, num2, whole2):
     if not FanacNames.FanacNames().CompareNames(name1, name2):
         return False
-    if (vol1 != vol2):
-        return False
-    if num1 != num2:
-        return False
-    if whole1 != whole2:
-        return False
 
-    return True
+    # Sometimes we pass in intergers and sometimes strings.  Let's work with strings here
+    if vol1 != None:
+        vol1=str(vol1)
+    if num1 != None:
+        num1=str(num1)
+    if vol2 != None:
+        vol2=str(vol2)
+    if num2 != None:
+        num2=str(num2)
+
+    # The strategy is to allow over-specification (e.g., both Vol+Num and WholeNum.
+    # So one or the other must match
+    if vol1 != None and num1 != None and vol1 == vol2 and num1 == num2:
+        return True
+    if whole1 != None and whole1 == whole2:
+        return True
+
+    return False
 
 #==================================================================================
 # Create a name for comparison purposes which is lower case and without whitespace or punctuation

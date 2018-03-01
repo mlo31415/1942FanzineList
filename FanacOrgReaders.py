@@ -295,13 +295,7 @@ def FormatIssueSpecs(fz):
             # Check the table of all fanzines issues on fanac.org to see if there is a match for fanzine-vol-issue
             url=None
             for fii in g_fanacIssueInfo:
-                if fii.Vol != None:
-                    n=fii.Number
-                    w=None
-                else:
-                    n=None
-                    w=fii.Number
-                if Helpers.CompareIssueSpec(fii.FanzineName, fii.Vol, n, w, name, issue.Vol, issue.Num, issue.Whole):
+                if Helpers.CompareIssueSpec(fii.FanzineName, fii.Vol, fii.Number, fii.Number, name, issue.Vol, issue.Num, issue.Whole):
                     url=fii.URL
                     text=str(issue.Num)
                     print("   FormatStuff: Found on fanac: vol="+str(issue.Vol)+" issue="+str(issue.Num)+"  url="+url)
@@ -314,13 +308,7 @@ def FormatIssueSpecs(fz):
             if v == None:
                 # We have a name, and a whole number.  See if they turn up as an external link]
                 for ext in ExternalLinks.ExternalLinks().List():
-                    if ext.Volume != None:
-                        n=fii.Number
-                        w=None
-                    else:
-                        n=None
-                        w=fii.Number
-                    if Helpers.CompareIssueSpec(ext.Title, ext.Volume, n, w, name, issue.Vol, issue.Num, issue.Whole):
+                    if Helpers.CompareIssueSpec(ext.Title, ext.Volume, ext.Number, ext.Whole_Number, name, issue.Vol, issue.Num, issue.Whole):
                         url=ext.URL
                         print("   FormatStuff: Found external: Vol="+str(issue.Vol)+" issue="+str(issue.Num)+"  url="+url)
                         if url!=None:

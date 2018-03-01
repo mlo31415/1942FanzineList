@@ -128,12 +128,6 @@ for index in range(0, len(allFanzines1942)):
 
     c_range=re.compile("^(\d+)\s*[\-–]\s*(\d+)$")
 
-    c_list=re.compile(r"""^             # Starting at the beginning
-                        ((?:            # Deal with repetitions
-                        [\d+,\w*])*)    # of a string of digits followed by a mandatory single comma, folled by optional whitespace.  This is all one group
-                        (\d+,?)(.*)     # Then a last group of digits followed by an optional comma followed by the rest of the line                       
-                         """, re.X)
-
     while len(stuff) > 0:
         issueSpecs=None
         isl=[]
@@ -158,6 +152,24 @@ for index in range(0, len(allFanzines1942)):
                 t.Set2(vol, int(i))
                 isl.append(t)
 
+            # Check to see if the last item was followed by a bracketed comment.  If so, add it to the last item.
+            if len(iList) > 0:
+                stuff=stuff.strip()
+                if len(stuff)> 0:
+                    if stuff[0] == '[':
+                        m=re.compile("^(\[.*\])(.*)$").match(stuff)
+                        if m != None and len(m.groups()) == 2:
+                            isl[len(isl)-1]=isl[len(isl)-1].SetTrailingGarbage("["+m.groups()[0]+"]")
+                            stuff=m.groups()[1].strip()
+                            if len(stuff) > 0 and stuff[0] == ",":
+                                stuff=stuff[1:].strip()     # If there was a trailing comma, delete it.
+                    elif stuff[0] == '(':
+                        m=re.compile("^(\(.*\))(.*)$").match(stuff)
+                        if m != None and len(m.groups()) == 2:
+                            isl[len(isl)-1]=isl[len(isl)-1].SetTrailingGarbage("("+m.groups()[0]+")")
+                            stuff=m.groups()[1].strip()
+                            if len(stuff) > 0 and stuff[0] == ",":
+                                stuff=stuff[1:].strip()     # If there was a trailing comma, delete it.
         else:
             # Deal with a range of numbers, nnn-nnn
             m=c_range.match(stuff)
@@ -169,21 +181,49 @@ for index in range(0, len(allFanzines1942)):
             else:
                 # It's not a Vn#n sort of thing, but maybe it's a list of whole numbers
                 # It must start with a digit and contain no other characters than whitespace and commas.
-                m=c_list.match(stuff)
-                if m != None and len(m.groups()) == 3:
-                    iList=m.groups()[0]+m.groups()[1]
-                    stuff=m.groups()[2]
-                    iList=iList.replace(" ", "").replace(";", ",").split(",")  # Split on either ',' or ':'
-                    for i in iList:
-                        if len(i)==0:
-                            continue
+                # m=c_list.match(stuff)
+                # if m != None and len(m.groups()) == 3:
+                #     iList=m.groups()[0]+m.groups()[1]
+                #     stuff=m.groups()[2]
+                #     iList=iList.replace(" ", "").replace(";", ",").split(",")  # Split on either ',' or ':'
+                sl=stuff.split(",")
+                sl=[s.strip() for s in sl]
+                sl=[s.split("[", 1) for s in sl]
+                print(sl)
+
+                # The splits create a nested affair of a list some of the members of which are themselves lists. Flatten it.
+                slist=[""]
+                for s in sl:
+                    if s != None:
+                        slist.append(s[0])
+                        if len(s)==2:
+                            slist.append(s[1])
+
+                def fix(x):     # An inline function to restore the leading '[' or '(' which the splits on them consumed
+                    if len(x)==0: return x
+                    if x[0].isdigit(): return x
+                    if x[-1:] == ")": return "("+x
+                    return "["+x
+                iList=[fix(s) for s in slist]
+                print(iList)
+
+                # The last bit is to remove any trailing characters on a number.
+                jList=[]
+                for i in iList:
+                    print(i)
+                    c=re.compile("^(\d+)(.*)$")
+                    m=c.match(i)
+                    if m != None:
                         t=IssueSpec.IssueSpec()
-                        t.Set1(int(i))
+                        t.Set1(int(m.groups()[0]))
+                        if len(m.groups()[1])>0:
+                            t.SetTrailingGarbage(m.groups()[1])
                         isl.append(t)
+
                 # OK, it's probably junk. Absorb everything until the next V-spec or digit
-                else:
-                    isl=[IssueSpec.IssueSpec().SetUninterpretableText(stuff)]
-                    stuff=""
+                # else:
+                #     isl=[IssueSpec.IssueSpec().SetUninterpretableText(stuff)]
+                stuff=""
 
         if len(isl) > 0:
             issueSpecList.Append(isl)
@@ -191,7 +231,7 @@ for index in range(0, len(allFanzines1942)):
     print("   "+issueSpecList.Str())
     allFanzines1942[index].SetIssues(issueSpecList)    # Just update the one field
 
-del i, stuff, t, issueSpecs, index, fz, k, iList, issueSpecList, m, c_VnnNnn, c_range, c_list
+del i, stuff, t, issueSpecs, index, fz, k, iList, issueSpecList, m, c_VnnNnn, c_range
 print("----Done decoding issue list in list of all 1942 fanzines")
 
 

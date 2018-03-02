@@ -167,15 +167,19 @@ def CompareIssueSpec(name1, vol1, num1, whole1, name2, vol2, num2, whole2):
     if not FanacNames.FanacNames().CompareNames(name1, name2):
         return False
 
-    # Sometimes we pass in intergers and sometimes strings.  Let's work with strings here
-    if vol1 != None:
+    # Sometimes we pass in integers and sometimes strings.  Let's work with strings here
+    if vol1 is not None:
         vol1=str(vol1)
-    if num1 != None:
+    if num1 is not None:
         num1=str(num1)
-    if vol2 != None:
+    if vol2 is not None:
         vol2=str(vol2)
-    if num2 != None:
+    if num2 is not None:
         num2=str(num2)
+    if whole1 is not None:
+        whole1=str(whole1)
+    if whole2 is not None:
+        whole2=str(whole2)
 
     # The strategy is to allow over-specification (e.g., both Vol+Num and WholeNum.
     # So one or the other must match

@@ -159,14 +159,14 @@ for index in range(0, len(allFanzines1942)):
                     if stuff[0] == '[':
                         m=re.compile("^(\[.*\])(.*)$").match(stuff)
                         if m != None and len(m.groups()) == 2:
-                            isl[len(isl)-1]=isl[len(isl)-1].SetTrailingGarbage("["+m.groups()[0]+"]")
+                            isl[len(isl)-1]=isl[len(isl)-1].SetTrailingGarbage(m.groups()[0])
                             stuff=m.groups()[1].strip()
                             if len(stuff) > 0 and stuff[0] == ",":
                                 stuff=stuff[1:].strip()     # If there was a trailing comma, delete it.
                     elif stuff[0] == '(':
                         m=re.compile("^(\(.*\))(.*)$").match(stuff)
                         if m != None and len(m.groups()) == 2:
-                            isl[len(isl)-1]=isl[len(isl)-1].SetTrailingGarbage("("+m.groups()[0]+")")
+                            isl[len(isl)-1]=isl[len(isl)-1].SetTrailingGarbage(m.groups()[0])
                             stuff=m.groups()[1].strip()
                             if len(stuff) > 0 and stuff[0] == ",":
                                 stuff=stuff[1:].strip()     # If there was a trailing comma, delete it.

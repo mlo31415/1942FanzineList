@@ -29,28 +29,34 @@ class FanacNames:
             return False
 
         if name1.lower().startswith("the "):
-            name1=name1[4:]+", the"
-            name1=name1.strip()
+            name1=name1[4:].strip()
+        if name1.lower().endswith(", the"):
+            name1=name1[:-5].strip()
 
         if name2.lower().startswith("the "):
-            name2=name2[4:]+", the"
-            name2=name2.strip()
+            name2=name2[4:].strip()
+        if name2.lower().endswith(", the"):
+            name2=name2[:-5].strip()
 
         if name1.lower().startswith("a "):
-            name1=name1[2:]+", a"
-            name1=name1.strip()
+            name1=name1[2:].strip()
+        if name1.lower().endswith(", a"):
+            name1=name1[:-3].strip()
 
         if name2.lower().startswith("a "):
-            name2=name2[2:]+", a"
-            name2=name2.strip()
+            name2=name2[2:].strip()
+        if name2.lower().endswith(", a"):
+            name2=name2[:-3].strip()
 
         if name1.lower().startswith("an "):
-            name1=name1[3:]+", an"
-            name1=name1.strip()
+            name1=name1[3:].strip()
+        if name1.lower().endswith(", an"):
+            name1=name1[:-4].strip()
 
         if name2.lower().startswith("an "):
-            name2=name2[3:]+", an"
-            name2=name2.strip()
+            name2=name2[3:].strip()
+        if name2.lower().endswith(", an"):
+            name2=name2[:-4].strip()
 
         return Helpers.CompressName(name1) == Helpers.CompressName(name2)
 

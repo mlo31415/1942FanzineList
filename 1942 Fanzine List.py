@@ -200,10 +200,11 @@ for index in range(0, len(allFanzines1942)):
                             slist.append(s[1])
 
                 def fix(x):     # An inline function to restore the leading '[' or '(' which the splits on them consumed
-                    if len(x)==0: return x
+                    if len(x) == 0: return x
                     if x[0].isdigit(): return x
                     if x[-1:] == ")": return "("+x
-                    return "["+x
+                    if x[-1:] == "]": return "["+x
+                    return x
                 iList=[fix(s) for s in slist]
                 print(iList)
 
@@ -211,7 +212,7 @@ for index in range(0, len(allFanzines1942)):
                 jList=[]
                 for i in iList:
                     print(i)
-                    c=re.compile("^(\d+)(.*)$")
+                    c=re.compile("^#?(\d+)(.*)$")
                     m=c.match(i)
                     if m != None:
                         t=IssueSpec.IssueSpec()

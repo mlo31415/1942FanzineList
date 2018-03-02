@@ -8,7 +8,6 @@ import FanacDirectoryFormats
 import ExternalLinks
 import FanacDirectories
 
-
 # ============================================================================================
 def ReadFanacFanzineIssues():
     # Read index.html files on fanac.org
@@ -221,7 +220,8 @@ def InterpretFanzineTable(fanzineName, FanacIssueInfo, fanzineTable, format):
 # For now, we'll attempt only to format what we interpret, above: whole numbers and Vol/# combinations
 def FormatIssueSpecs(fz):
     if fz.issues == None or fz.issues.len() == 0:
-        return fz.issuesText+" "+fz.possible+" "+fz.junk
+        # TODO: check for no issuestuff
+        return "stuff"
 
     print("   FormatStuff: fz.title="+str(fz.title)+"  fz.fanacDirName="+str(fz.fanacDirName)+"   fz.issues="+fz.issues.Str())
 

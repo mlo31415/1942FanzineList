@@ -188,6 +188,15 @@ def CompareIssueSpec(name1, vol1, num1, whole1, name2, vol2, num2, whole2):
     if whole1 != None and whole1 == whole2:
         return True
 
+    # A Onesie should have all the numbers None or empty string
+    if (vol1 is None or vol1 == "")\
+            and (vol2 is None or vol2 == "")\
+            and (num1 is None or num1 == "")\
+            and (num2 is None or num2 == "")\
+            and (whole1 is None or whole1 == "")\
+            and (whole2 is None or whole2 == ""):
+        return True
+
     return False
 
 #==================================================================================

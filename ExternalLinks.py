@@ -30,6 +30,9 @@ class ExternalLinks:
                 t2=[]
                 for t in temp:
                     t2.append(t.strip())
+                if len(t2) != 10:
+                    print("***Length error: Length is "+str(len(t2)))
+                    continue
                 g_externalLinks1942.append(ExternalLinksData(*tuple(t2)))  # Turn the list into a named tuple.
             f.close()
             print("----Done reading External Links 1942.txt")
